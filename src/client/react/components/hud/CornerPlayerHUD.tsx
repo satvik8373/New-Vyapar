@@ -35,6 +35,7 @@ interface CornerPlayerHUDProps {
   isInVoice?: boolean;
   isPeerMutedLocally?: boolean;
   onToggleMutePeer?: (peerId: string) => void;
+  pingMs?: number;
 }
 
 export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
@@ -49,7 +50,8 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
   isMicMuted = false,
   isInVoice = false,
   isPeerMutedLocally = false,
-  onToggleMutePeer
+  onToggleMutePeer,
+  pingMs
 }) => {
   const engine = GameEngine.getInstance();
   const [showOpponentPopover, setShowOpponentPopover] = useState(false);
@@ -200,6 +202,18 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
               </span>
             )}
             {isHeroPlayer && <span className="hud-role-tag">YOU</span>}
+            {/* Real Network Ping Badge */}
+            {typeof pingMs === 'number' && pingMs > 0 && (
+              <span
+                className={`hud-ping-badge ${
+                  pingMs < 60 ? 'ping-good' : pingMs < 130 ? 'ping-fair' : 'ping-poor'
+                }`}
+                title={`Network Latency: ${pingMs} ms`}
+              >
+                <span className="hud-ping-dot" />
+                {pingMs}ms
+              </span>
+            )}
             {!player.isHuman && !engine.getMultiplayerAdapter()?.isMultiplayerActive() && (player.avatar === 'bot' || player.name.includes('(AI)')) && (
               <span className="hud-role-tag ai">AI</span>
             )}

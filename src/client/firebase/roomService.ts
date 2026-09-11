@@ -485,8 +485,10 @@ export class RoomService {
     if (!cleanState) return;
 
     try {
-      await set(ref(rtdb, `rooms/${cleanCode}/gameState`), cleanState);
-      await update(ref(rtdb, `rooms/${cleanCode}`), { updatedAt: serverTimestamp() });
+      await update(ref(rtdb, `rooms/${cleanCode}`), {
+        gameState: cleanState,
+        updatedAt: serverTimestamp()
+      });
     } catch (e) {
       console.warn('[RoomService] RTDB syncGameState failed, updating locally:', e);
     }

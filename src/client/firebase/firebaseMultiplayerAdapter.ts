@@ -93,6 +93,9 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
   }
 
   private async fetchCurrentState(): Promise<SyncGameState | null> {
+    if (this.latestGameState) {
+      return this.latestGameState;
+    }
     try {
       const room = await RoomService.getInstance().getRoom(this.roomCode);
       if (room?.gameState) {

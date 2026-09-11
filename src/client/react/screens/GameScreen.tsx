@@ -22,6 +22,7 @@ import { ActivityLogDrawer } from '../components/hud/ActivityLogDrawer';
 import { TitleDeedPopupModal } from '../modals/TitleDeedPopupModal';
 import { VoiceChatService, VoiceChatState } from '../../services/VoiceChatService';
 import { AuthService } from '../../firebase/authService';
+import { NetworkQualityService } from '../../services/NetworkQualityService';
 
 interface GameScreenProps {
   onExitToMenu: () => void;
@@ -32,10 +33,12 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
   const engine = GameEngine.getInstance();
   const bridge = GameBridge.getInstance();
   const voiceService = VoiceChatService.getInstance();
+  const networkService = NetworkQualityService.getInstance();
 
   const [engineState, setEngineState] = useState<GameEngineState>(engine.getState());
   const [isMuted, setIsMuted] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceChatState>(voiceService.getState());
+  const [networkPing, setNetworkPing] = useState<number>(() => networkService.getPing());
 
   const {
     players,
@@ -142,6 +145,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
       unsub();
     };
   }, [roomCode, heroPlayer?.id, heroPlayer?.name]);
+
+  // ── Network Quality Ping Listener ────────────────────────────────────────
+  useEffect(() => {
+    return networkService.subscribe((ping) => {
+      setNetworkPing(ping);
+    });
+  }, [networkService]);
 
   const handleToggleMic = async () => {
     if (!roomCode) {
@@ -376,6 +386,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           isInVoice={voiceState.isInVoice}
           isMicMuted={voiceState.isMuted}
           isSpeaking={voiceState.isSpeaking}
+          pingMs={networkPing}
         />
       )}
 
@@ -440,7 +451,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           4. BOTTOM MATCH STATUS & NETWORK PING BAR (REFERENCE STYLE)
           ==================================================================== */}
       <div className="bottom-match-ping-bar">
-        <span className="ping-text">ping: 28 ms</span>
+        <span className="ping-text">ping: {networkPing} ms</span>
         {latestLog && <span className="latest-log-pill">{latestLog}</span>}
         <span className="version-text">v2.19.27 • GUJARAT BUSINESS BOARD</span>
       </div>

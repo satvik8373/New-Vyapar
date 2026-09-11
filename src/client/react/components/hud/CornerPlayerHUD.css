@@ -176,6 +176,58 @@
   flex-shrink: 0;
 }
 
+/* Live Network Ping Badge in Player HUD */
+.hud-ping-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5px;
+  font-size: 7.5px;
+  font-weight: 800;
+  padding: 1px 3.5px;
+  border-radius: 3px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.hud-ping-badge.ping-good {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #dcfce7;
+}
+
+.hud-ping-badge.ping-good .hud-ping-dot {
+  background-color: #22c55e;
+}
+
+.hud-ping-badge.ping-fair {
+  background: #fefce8;
+  color: #a16207;
+  border-color: #fef9c3;
+}
+
+.hud-ping-badge.ping-fair .hud-ping-dot {
+  background-color: #eab308;
+}
+
+.hud-ping-badge.ping-poor {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fee2e2;
+}
+
+.hud-ping-badge.ping-poor .hud-ping-dot {
+  background-color: #ef4444;
+}
+
+.hud-ping-dot {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
 .hud-role-tag.ai {
   background: #f1f5f9;
   color: #475569;
