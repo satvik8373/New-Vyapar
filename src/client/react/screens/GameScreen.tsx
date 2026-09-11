@@ -345,6 +345,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
         onOpenLogs={() => setLogsOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
         unreadLogCount={logs.length}
+        isPortrait={isPortraitMobile}
       />
 
       {/* ====================================================================

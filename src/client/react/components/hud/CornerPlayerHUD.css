@@ -733,8 +733,8 @@
 @media (max-width: 768px) {
   .minimal-hud-wrapper.pos-top-left     { top: max(10px, calc(env(safe-area-inset-top) + 8px)); left: max(14px, calc(env(safe-area-inset-left) + 8px)); }
   .minimal-hud-wrapper.pos-top-right    { top: max(10px, calc(env(safe-area-inset-top) + 8px)); right: max(14px, calc(env(safe-area-inset-right) + 8px)); }
-  .minimal-hud-wrapper.pos-bottom-left  { bottom: max(10px, calc(env(safe-area-inset-bottom) + 8px)); left: max(14px, calc(env(safe-area-inset-left) + 8px)); }
-  .minimal-hud-wrapper.pos-bottom-right { bottom: max(10px, calc(env(safe-area-inset-bottom) + 8px)); right: max(14px, calc(env(safe-area-inset-right) + 8px)); }
+  .minimal-hud-wrapper.pos-bottom-left  { bottom: max(60px, calc(env(safe-area-inset-bottom) + 56px)); left: max(12px, calc(env(safe-area-inset-left) + 8px)); }
+  .minimal-hud-wrapper.pos-bottom-right { bottom: max(60px, calc(env(safe-area-inset-bottom) + 56px)); right: max(12px, calc(env(safe-area-inset-right) + 8px)); }
 
   .minimal-hud-chip {
     max-width: calc(50vw - 12px);

@@ -21,6 +21,7 @@ interface FloatingUtilityRailProps {
   onOpenLogs: () => void;
   onOpenSettings: () => void;
   unreadLogCount?: number;
+  isPortrait?: boolean;
 }
 
 export const FloatingUtilityRail: React.FC<FloatingUtilityRailProps> = ({
@@ -34,14 +35,15 @@ export const FloatingUtilityRail: React.FC<FloatingUtilityRailProps> = ({
   onOpenBank,
   onOpenLogs,
   onOpenSettings,
-  unreadLogCount = 0
+  unreadLogCount = 0,
+  isPortrait = false
 }) => {
   // Minimizes only the vertical [+ / -] zoom wing on the left side
   const [isZoomMinimized, setIsZoomMinimized] = useState(false);
   const isZoomed = boardScale > 1.05;
 
   return (
-    <div className="connected-utility-console">
+    <div className={`connected-utility-console ${isPortrait ? 'is-portrait-bottom' : ''}`}>
       {/* ── LEFT-SIDE CONNECTED ZOOM WING (VERTICAL STACK, ZERO GAP) ── */}
       <div className={`connected-zoom-wing ${isZoomMinimized ? 'is-minimized' : 'is-expanded'}`}>
         {/* Single Minimize / Expand Chevron Toggle */}
