@@ -762,7 +762,7 @@ export class GameEngine {
       setTimeout(() => {
         this.startHopSequence(active.id, active.currentTileIndex, diceValue);
       }, 400);
-    }, 1400);
+    }, 650);
   }
 
   // ── HOPPING ─────────────────────────────────────────────────────────────────

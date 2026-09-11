@@ -71,35 +71,27 @@
   width: var(--dice-size, 52px);
   height: var(--dice-size, 52px);
   transform-style: preserve-3d;
-  /* Natural tactile landing settle */
-  transition: transform 0.6s cubic-bezier(0.25, 1.15, 0.35, 1);
+  /* Crisp, smooth tactile landing settle */
+  transition: transform 0.48s cubic-bezier(0.2, 0.85, 0.32, 1.05);
   z-index: 2;
+  will-change: transform;
 }
 
-/* Realistic board game tumble: subtle physical hop, natural roll, rhythmic bounce */
+/* Silky smooth continuous rolling with subtle tabletop lift */
 .dice-cube.is-rolling {
-  animation: diceTumble 0.8s cubic-bezier(0.4, 0.05, 0.25, 1) infinite;
+  animation: diceTumble 0.38s linear infinite;
   transition: none;
 }
 
 @keyframes diceTumble {
   0% {
-    transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg);
   }
-  20% {
-    transform: translateY(-16px) rotateX(75deg) rotateY(60deg) rotateZ(-12deg);
-  }
-  40% {
-    transform: translateY(-6px) rotateX(160deg) rotateY(140deg) rotateZ(10deg);
-  }
-  60% {
-    transform: translateY(-18px) rotateX(250deg) rotateY(230deg) rotateZ(-8deg);
-  }
-  80% {
-    transform: translateY(-8px) rotateX(320deg) rotateY(310deg) rotateZ(8deg);
+  50% {
+    transform: translateY(-6px) rotateX(180deg) rotateY(180deg);
   }
   100% {
-    transform: translateY(0px) rotateX(360deg) rotateY(360deg) rotateZ(0deg);
+    transform: translateY(0px) rotateX(360deg) rotateY(360deg);
   }
 }
 

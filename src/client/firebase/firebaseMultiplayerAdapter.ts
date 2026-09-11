@@ -183,8 +183,8 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
     GameEngine.getInstance().syncWithFirebase(state, this.myUid);
     await RoomService.getInstance().syncGameState(this.roomCode, state);
 
-    // Give 1200ms for realistic 3D dice tumbling animation
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    // Give 650ms for snappy, smooth 3D dice tumbling animation
+    await new Promise((resolve) => setTimeout(resolve, 650));
 
     // Step 2: Roll 1 to 6 and reveal dice face
     const diceVal = Math.floor(Math.random() * 6) + 1;
