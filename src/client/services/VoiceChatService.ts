@@ -19,12 +19,13 @@ export interface PeerVoiceState {
 
 export interface VoiceChatState {
   isSupported: boolean;
-  isInVoice: boolean;
-  isMuted: boolean;
+  isInVoice: boolean;      // Whether user's local microphone is actively streaming
+  isMuted: boolean;        // Whether local microphone is muted
   isSpeaking: boolean;
   isConnecting: boolean;
   error: string | null;
   peers: Record<string, PeerVoiceState>;
+  mutedPeerIds: string[];  // List of opponent IDs muted locally by the user
 }
 
 type VoiceStateListener = (state: VoiceChatState) => void;
@@ -51,6 +52,7 @@ export class VoiceChatService {
 
   private peerConnections: Map<string, RTCPeerConnection> = new Map();
   private peerAudioElements: Map<string, HTMLAudioElement> = new Map();
+  private mutedPeerIds: Set<string> = new Set();
   private unsubs: Unsubscribe[] = [];
 
   private state: VoiceChatState = {
@@ -60,7 +62,8 @@ export class VoiceChatService {
     isSpeaking: false,
     isConnecting: false,
     error: null,
-    peers: {}
+    peers: {},
+    mutedPeerIds: []
   };
 
   private listeners: Set<VoiceStateListener> = new Set();
@@ -75,7 +78,10 @@ export class VoiceChatService {
   }
 
   public getState(): VoiceChatState {
-    return { ...this.state };
+    return {
+      ...this.state,
+      mutedPeerIds: Array.from(this.mutedPeerIds)
+    };
   }
 
   public subscribe(listener: VoiceStateListener): () => void {
@@ -96,7 +102,8 @@ export class VoiceChatService {
   }
 
   /**
-   * Set room context without automatically turning mic on
+   * Set room context and immediately enable Listen-Only mode
+   * (Allows user to hear opponents even without turning their own mic on!)
    */
   public initRoom(roomCode: string, uid: string, name: string) {
     if (this.roomCode === roomCode && this.currentUid === uid) {
@@ -107,7 +114,10 @@ export class VoiceChatService {
     this.currentUid = uid;
     this.currentName = name;
 
-    // Listen to voice state of all room members to display speaking/mic badges
+    // Listen to signaling messages for incoming WebRTC audio
+    this.setupSignalingListener();
+
+    // Listen to voice state of all room members and connect in listen mode
     this.listenToRoomVoiceStates(roomCode);
   }
 
@@ -128,11 +138,11 @@ export class VoiceChatService {
         this.state.peers = peers;
         this.notify();
 
-        // If we are currently in voice, establish WebRTC connection with any new peers who joined voice
-        if (this.state.isInVoice && this.currentUid) {
+        // Connect WebRTC to any peers broadcasting voice (even if local mic is OFF!)
+        if (this.currentUid) {
           Object.keys(peers).forEach((peerUid) => {
             if (!this.peerConnections.has(peerUid)) {
-              // Deterministic offerer: lower UID initiates offer to prevent race conditions
+              // Deterministic offerer: lower UID initiates offer
               const shouldOffer = this.currentUid! < peerUid;
               this.setupPeerConnection(peerUid, shouldOffer);
             }
@@ -158,7 +168,7 @@ export class VoiceChatService {
   }
 
   /**
-   * Join Voice Channel
+   * Join Voice Channel & Broadcast Local Voice
    */
   public async joinVoice(): Promise<boolean> {
     if (!this.state.isSupported) {
@@ -193,22 +203,33 @@ export class VoiceChatService {
       this.state.isMuted = false;
       this.state.isConnecting = false;
 
-      // 2. Setup Audio Analyser for Speaking Pulse Detection
+      // 2. Setup Audio Analyser for Speaking Level Detection
       this.setupSpeakingDetector(stream);
 
       // 3. Publish voice presence in RTDB
       await this.publishLocalVoiceState(false, false);
 
-      // 4. Setup signaling listener for incoming offers, answers, and ICE candidates
-      this.setupSignalingListener();
+      // 4. Attach local audio track to all existing peer connections
+      const tracks = stream.getAudioTracks();
+      for (const [peerUid, pc] of this.peerConnections.entries()) {
+        tracks.forEach((track) => {
+          pc.addTrack(track, stream);
+        });
 
-      // 5. Connect with any peers already in voice
-      Object.keys(this.state.peers).forEach((peerUid) => {
-        if (!this.peerConnections.has(peerUid)) {
-          const shouldOffer = this.currentUid! < peerUid;
-          this.setupPeerConnection(peerUid, shouldOffer);
+        // Renegotiate offer so peer receives our audio
+        try {
+          const offer = await pc.createOffer({ offerToReceiveAudio: true });
+          await pc.setLocalDescription(offer);
+          const sigRef = ref(rtdb, `rooms/${this.roomCode}/voiceSignaling/${peerUid}/${this.currentUid}/offer`);
+          await set(sigRef, {
+            type: offer.type,
+            sdp: offer.sdp,
+            timestamp: Date.now()
+          });
+        } catch (e) {
+          console.warn('[VoiceChatService] Renegotiation error:', e);
         }
-      });
+      }
 
       this.notify();
       return true;
@@ -217,7 +238,7 @@ export class VoiceChatService {
       this.state.isInVoice = false;
       this.state.isConnecting = false;
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        this.state.error = 'Microphone permission denied. Please allow microphone access in your browser settings.';
+        this.state.error = 'Microphone permission denied. Please allow microphone access in your browser.';
       } else {
         this.state.error = 'Could not access microphone: ' + (err.message || 'Unknown error');
       }
@@ -227,7 +248,7 @@ export class VoiceChatService {
   }
 
   /**
-   * Toggle Mute / Unmute
+   * Toggle Local Mute / Unmute
    */
   public toggleMute() {
     if (!this.localStream) return;
@@ -244,6 +265,33 @@ export class VoiceChatService {
   }
 
   /**
+   * Manually mute/unmute a specific opponent's voice locally
+   */
+  public toggleMutePeer(peerUid: string): boolean {
+    let isMuted: boolean;
+    if (this.mutedPeerIds.has(peerUid)) {
+      this.mutedPeerIds.delete(peerUid);
+      isMuted = false;
+    } else {
+      this.mutedPeerIds.add(peerUid);
+      isMuted = true;
+    }
+
+    const audioEl = this.peerAudioElements.get(peerUid);
+    if (audioEl) {
+      audioEl.muted = isMuted;
+    }
+
+    this.state.mutedPeerIds = Array.from(this.mutedPeerIds);
+    this.notify();
+    return isMuted;
+  }
+
+  public isPeerMuted(peerUid: string): boolean {
+    return this.mutedPeerIds.has(peerUid);
+  }
+
+  /**
    * Publish local voice presence in RTDB
    */
   private async publishLocalVoiceState(isMuted: boolean, isSpeaking: boolean) {
@@ -257,7 +305,7 @@ export class VoiceChatService {
         isSpeaking,
         joinedAt: Date.now()
       });
-      // Ensure state is removed when disconnects
+      // Ensure state is removed on unexpected disconnect
       onDisconnect(myVoiceRef).remove();
     } catch (err) {
       console.warn('[VoiceChatService] Failed to publish voice state:', err);
@@ -274,14 +322,14 @@ export class VoiceChatService {
       const pc = new RTCPeerConnection(ICE_SERVERS);
       this.peerConnections.set(peerUid, pc);
 
-      // Add local audio tracks to peer connection
+      // Add local audio tracks if microphone is active
       if (this.localStream) {
         this.localStream.getTracks().forEach((track) => {
           pc.addTrack(track, this.localStream!);
         });
       }
 
-      // Play remote audio track when received
+      // Play remote audio track when received from opponent
       pc.ontrack = (event) => {
         const [remoteStream] = event.streams;
         if (remoteStream) {
@@ -293,6 +341,7 @@ export class VoiceChatService {
             this.peerAudioElements.set(peerUid, audioEl);
           }
           audioEl.srcObject = remoteStream;
+          audioEl.muted = this.mutedPeerIds.has(peerUid);
           audioEl.play().catch((e) => console.warn('[VoiceChatService] Remote audio autoplay:', e));
         }
       };
@@ -311,7 +360,7 @@ export class VoiceChatService {
         }
       };
 
-      // If this client is designated to make the offer
+      // Designate offerer
       if (isOfferer) {
         const offer = await pc.createOffer({
           offerToReceiveAudio: true
@@ -331,7 +380,7 @@ export class VoiceChatService {
   }
 
   /**
-   * Listen to incoming RTDB signaling messages (offers, answers, candidates) directed to currentUid
+   * Listen to incoming RTDB signaling messages (offers, answers, candidates)
    */
   private setupSignalingListener() {
     if (!this.roomCode || !this.currentUid) return;
@@ -356,7 +405,7 @@ export class VoiceChatService {
           if (pc) {
             try {
               await pc.setRemoteDescription(new RTCSessionDescription(msg.offer));
-              const answer = await pc.createAnswer();
+              const answer = await pc.createAnswer({ offerToReceiveAudio: true });
               await pc.setLocalDescription(answer);
 
               // Send answer back to fromUid
@@ -379,7 +428,6 @@ export class VoiceChatService {
         if (msg.answer && pc && pc.signalingState === 'have-local-offer') {
           try {
             await pc.setRemoteDescription(new RTCSessionDescription(msg.answer));
-            // Clean consumed answer
             remove(ref(rtdb, `rooms/${this.roomCode}/voiceSignaling/${this.currentUid}/${fromUid}/answer`));
           } catch (e) {
             console.warn(`[VoiceChatService] Error processing answer from ${fromUid}:`, e);
@@ -486,7 +534,8 @@ export class VoiceChatService {
   }
 
   /**
-   * Leave Voice Chat & Release Hardware Microphone
+   * Leave Voice Broadcasting & Release Microphone Hardware
+   * (Keeps peerConnections and audio elements intact so user still hears opponents!)
    */
   public leaveVoice() {
     if (this.animFrameId) {
@@ -507,19 +556,20 @@ export class VoiceChatService {
       this.localStream = null;
     }
 
-    this.peerConnections.forEach((pc) => pc.close());
-    this.peerConnections.clear();
-
-    this.peerAudioElements.forEach((audio) => {
-      audio.pause();
-      audio.srcObject = null;
+    // Remove local audio tracks from active peer connections
+    this.peerConnections.forEach((pc) => {
+      pc.getSenders().forEach((sender) => {
+        if (sender.track) {
+          try {
+            pc.removeTrack(sender);
+          } catch (e) {}
+        }
+      });
     });
-    this.peerAudioElements.clear();
 
     if (this.roomCode && this.currentUid) {
       try {
         remove(ref(rtdb, `rooms/${this.roomCode}/voiceState/${this.currentUid}`));
-        remove(ref(rtdb, `rooms/${this.roomCode}/voiceSignaling/${this.currentUid}`));
       } catch (e) {}
     }
 
@@ -532,10 +582,22 @@ export class VoiceChatService {
   }
 
   /**
-   * Complete teardown (e.g. when leaving room or exiting game)
+   * Complete teardown (when leaving room or exiting game entirely)
    */
   public destroy() {
     this.leaveVoice();
+
+    this.peerConnections.forEach((pc) => pc.close());
+    this.peerConnections.clear();
+
+    this.peerAudioElements.forEach((audio) => {
+      audio.pause();
+      audio.srcObject = null;
+    });
+    this.peerAudioElements.clear();
+
+    this.mutedPeerIds.clear();
+
     this.unsubs.forEach((unsub) => {
       try {
         unsub();
@@ -545,6 +607,7 @@ export class VoiceChatService {
     this.roomCode = null;
     this.currentUid = null;
     this.state.peers = {};
+    this.state.mutedPeerIds = [];
     this.notify();
   }
 }

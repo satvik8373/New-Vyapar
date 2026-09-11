@@ -13,6 +13,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import StyleIcon from '@mui/icons-material/Style';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import './CornerPlayerHUD.css';
 
 export interface HUDPlayerData extends PlayerData {
@@ -31,6 +33,8 @@ interface CornerPlayerHUDProps {
   isSpeaking?: boolean;
   isMicMuted?: boolean;
   isInVoice?: boolean;
+  isPeerMutedLocally?: boolean;
+  onToggleMutePeer?: (peerId: string) => void;
 }
 
 export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
@@ -43,7 +47,9 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
   onOpenDeedPopup,
   isSpeaking = false,
   isMicMuted = false,
-  isInVoice = false
+  isInVoice = false,
+  isPeerMutedLocally = false,
+  onToggleMutePeer
 }) => {
   const engine = GameEngine.getInstance();
   const [showOpponentPopover, setShowOpponentPopover] = useState(false);
@@ -254,6 +260,34 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
                   }}
                 >
                   <HandshakeIcon sx={{ fontSize: 12 }} />
+                </button>
+              </Tooltip>
+            )}
+
+            {/* Manual Mute / Unmute Opponent Voice Button */}
+            {!isHeroPlayer && !isBankrupt && onToggleMutePeer && (
+              <Tooltip
+                arrow
+                title={
+                  isPeerMutedLocally
+                    ? `Unmute ${player.name}'s voice`
+                    : `Mute ${player.name}'s voice`
+                }
+              >
+                <button
+                  type="button"
+                  className={`hud-action-btn mute-btn ${isPeerMutedLocally ? 'is-muted' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleMutePeer(player.id);
+                  }}
+                  aria-label={isPeerMutedLocally ? `Unmute ${player.name}` : `Mute ${player.name}`}
+                >
+                  {isPeerMutedLocally ? (
+                    <VolumeOffIcon sx={{ fontSize: 11, color: '#ef4444' }} />
+                  ) : (
+                    <VolumeUpIcon sx={{ fontSize: 11 }} />
+                  )}
                 </button>
               </Tooltip>
             )}

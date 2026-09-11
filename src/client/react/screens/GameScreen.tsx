@@ -170,6 +170,17 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
     }
   };
 
+  const handleToggleMutePeer = (peerId: string) => {
+    const isNowMuted = voiceService.toggleMutePeer(peerId);
+    const peerPlayer = players.find((p) => p.id === peerId);
+    const peerName = peerPlayer?.name || 'Player';
+    if (isNowMuted) {
+      bridge.emitToast(`Muted ${peerName}'s voice`, 'info');
+    } else {
+      bridge.emitToast(`Unmuted ${peerName}'s voice`, 'info');
+    }
+  };
+
   const winnerPlayer = winner ? players.find((p) => p.id === winner || p.name === winner) : null;
   const activePlayer = players[activePlayerIndex];
   const isHumanTurn = activePlayer?.isHuman ?? true;
@@ -318,6 +329,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           isInVoice={Boolean(voiceState.peers[pTopLeft.id])}
           isMicMuted={voiceState.peers[pTopLeft.id]?.isMuted}
           isSpeaking={voiceState.peers[pTopLeft.id]?.isSpeaking}
+          isPeerMutedLocally={voiceState.mutedPeerIds?.includes(pTopLeft.id)}
+          onToggleMutePeer={handleToggleMutePeer}
         />
       )}
 
@@ -331,6 +344,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           isInVoice={Boolean(voiceState.peers[pTopRight.id])}
           isMicMuted={voiceState.peers[pTopRight.id]?.isMuted}
           isSpeaking={voiceState.peers[pTopRight.id]?.isSpeaking}
+          isPeerMutedLocally={voiceState.mutedPeerIds?.includes(pTopRight.id)}
+          onToggleMutePeer={handleToggleMutePeer}
         />
       )}
 
@@ -344,6 +359,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           isInVoice={Boolean(voiceState.peers[pBottomLeft.id])}
           isMicMuted={voiceState.peers[pBottomLeft.id]?.isMuted}
           isSpeaking={voiceState.peers[pBottomLeft.id]?.isSpeaking}
+          isPeerMutedLocally={voiceState.mutedPeerIds?.includes(pBottomLeft.id)}
+          onToggleMutePeer={handleToggleMutePeer}
         />
       )}
 

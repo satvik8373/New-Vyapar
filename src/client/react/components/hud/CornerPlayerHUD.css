@@ -290,6 +290,24 @@
   color: #ffffff;
 }
 
+.hud-action-btn.mute-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.hud-action-btn.mute-btn.is-muted {
+  background: #fef2f2;
+  border-color: #fee2e2;
+  color: #ef4444;
+}
+
+.hud-action-btn.mute-btn.is-muted:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
 .hud-bankrupt-tag {
   font-size: 8px;
   font-weight: 900;
