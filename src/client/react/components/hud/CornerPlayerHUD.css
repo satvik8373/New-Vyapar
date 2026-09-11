@@ -1,0 +1,843 @@
+/* ==========================================================================
+   NAVO VYAPAR — MINIMAL LIGHT PLAYER HUD & PURE FLOATING 3D CARDS
+   ========================================================================== */
+
+.minimal-hud-wrapper {
+  position: absolute;
+  z-index: 85;
+  user-select: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* 4-Corner Positions — tucked safely inside corners and device safe areas (notch / camera cutout protection) */
+.minimal-hud-wrapper.pos-top-left     { top: max(12px, calc(env(safe-area-inset-top) + 8px)); left: max(16px, calc(env(safe-area-inset-left) + 12px)); }
+.minimal-hud-wrapper.pos-top-right    { top: max(12px, calc(env(safe-area-inset-top) + 8px)); right: max(16px, calc(env(safe-area-inset-right) + 12px)); }
+.minimal-hud-wrapper.pos-bottom-left  { bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px)); left: max(16px, calc(env(safe-area-inset-left) + 12px)); }
+.minimal-hud-wrapper.pos-bottom-right { bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px)); right: max(16px, calc(env(safe-area-inset-right) + 12px)); }
+
+/* 1. HUD Chip — Compact 2-row layout with reduced width */
+.minimal-hud-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 4px 7px 4px 5px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+  box-sizing: border-box;
+  max-width: 155px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.minimal-hud-chip:hover {
+  border-color: #cbd5e1;
+}
+
+.minimal-hud-chip.is-turn {
+  border: 1.5px solid var(--player-accent, #0f172a);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.09);
+}
+
+.minimal-hud-chip.is-bankrupt {
+  opacity: 0.5;
+  filter: grayscale(80%);
+}
+
+/* Avatar Wrapper */
+.hud-avatar-wrapper {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hud-jail-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d97706;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffff;
+}
+
+/* Text Stack: Name + Wealth */
+.hud-text-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.hud-name-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hud-player-name {
+  font-size: 11px;
+  font-weight: 750;
+  color: #0f172a;
+  letter-spacing: 0.15px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
+.hud-role-tag {
+  font-size: 7.5px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #0f172a;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hud-role-tag.ai {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.hud-turn-timer {
+  margin-left: auto;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #0f172a;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  padding: 1px 4.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hud-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1;
+  margin-top: 1.5px;
+}
+
+.hud-wealth-line {
+  display: flex;
+  align-items: center;
+  gap: 3.5px;
+  line-height: 1;
+}
+
+.hud-balance-val {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+  line-height: 1;
+}
+
+/* Property Deeds Count Button */
+.hud-card-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 3.5px;
+  padding: 1.5px 3.5px;
+  cursor: pointer;
+  color: #475569;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.hud-card-icon-btn:hover:not(.is-empty) {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.hud-card-icon-btn:hover:not(.is-empty) .hud-card-badge {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.hud-card-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #0f172a;
+  background: #e2e8f0;
+  padding: 0.5px 2.5px;
+  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.hud-card-icon-btn.is-empty {
+  opacity: 0.35;
+  cursor: default;
+  color: #94a3b8;
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Action Button */
+.hud-action-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 3.5px;
+  width: 19px;
+  height: 19px;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.hud-action-btn:hover {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.hud-bankrupt-tag {
+  font-size: 8px;
+  font-weight: 900;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.4px;
+}
+
+/* ==========================================================================
+   3. PURE FLOATING 3D CARDS (No enclosing box container)
+   ========================================================================== */
+.pure-floating-deck-wrapper {
+  position: absolute;
+  z-index: 160;
+  width: 280px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  box-sizing: border-box;
+  animation: popInFloatingDeck 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+@keyframes popInFloatingDeck {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Pure Floating Dock Placements */
+.pure-floating-deck-wrapper.dock-bottom-right {
+  bottom: 48px;
+  right: 0;
+}
+
+.pure-floating-deck-wrapper.dock-bottom-left {
+  bottom: 48px;
+  left: 0;
+}
+
+.pure-floating-deck-wrapper.dock-top-left {
+  top: 48px;
+  left: 0;
+}
+
+.pure-floating-deck-wrapper.dock-top-right {
+  top: 48px;
+  right: 0;
+}
+
+/* Minimal Floating Bar above cards */
+.floating-deck-quick-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 3px 8px 3px 10px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.floating-bar-label {
+  font-size: 11px;
+  font-weight: 850;
+  color: #0f172a;
+  letter-spacing: 0.2px;
+}
+
+.floating-bar-pill {
+  font-size: 9px;
+  font-weight: 900;
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 0.5px 5px;
+  border-radius: 9999px;
+}
+
+.floating-bar-close {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.floating-bar-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Cards Stage: Clean 3D viewport */
+.pure-floating-stage {
+  width: 100%;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   4. PING & MATCH STATUS BAR (top-center, floats above board)
+   ========================================================================== */
+.bottom-match-ping-bar {
+  display: none !important;
+}
+
+.bottom-match-ping-bar .ping-text {
+  color: #059669;
+  font-weight: 850;
+  flex-shrink: 0;
+}
+
+.bottom-match-ping-bar .latest-log-pill {
+  color: #1e293b;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.bottom-match-ping-bar .version-text {
+  color: #94a3b8;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   5. OPPONENT STRATEGIC INTELLIGENCE POPOVER
+   ========================================================================== */
+.opponent-property-popover {
+  position: absolute;
+  z-index: 150;
+  /* On desktop: 290px. On mobile: use as much viewport width as available
+     minus the HUD chip's own left offset (6px corner + chip ~130px max = ~140px)
+     so it never bleeds off either edge. */
+  width: clamp(220px, min(290px, calc(100vw - 28px)), 320px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow:
+    0 16px 36px -6px rgba(15, 23, 42, 0.22),
+    0 4px 12px rgba(15, 23, 42, 0.08);
+  padding: 10px 12px;
+  box-sizing: border-box;
+  user-select: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  animation: popoverFadeIn 0.16s ease-out;
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Docking — keeps the popover within the viewport on all screen sizes ── */
+
+/* Top-left HUD: popover opens below, anchored to left edge of HUD chip */
+.opponent-property-popover.popover-top-left {
+  top: calc(100% + 6px);
+  left: 0;
+  /* never bleed off the right side */
+  max-width: calc(100vw - 12px);
+}
+
+/* Top-right HUD: popover opens below, anchored to right edge — shift left if needed */
+.opponent-property-popover.popover-top-right {
+  top: calc(100% + 6px);
+  right: 0;
+  /* never bleed off the left side */
+  max-width: calc(100vw - 12px);
+}
+
+/* Bottom-left HUD: popover opens above, anchored to left edge */
+.opponent-property-popover.popover-bottom-left {
+  bottom: calc(100% + 6px);
+  left: 0;
+  max-width: calc(100vw - 12px);
+}
+
+/* Bottom-right HUD: popover opens above, anchored to right edge */
+.opponent-property-popover.popover-bottom-right {
+  bottom: calc(100% + 6px);
+  right: 0;
+  max-width: calc(100vw - 12px);
+}
+
+/* Mobile portrait: further tighten */
+@media (max-width: 768px) {
+  .opponent-property-popover {
+    width: min(260px, calc(100vw - 20px));
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  /* On very small screens left-anchored popovers that would push off-screen
+     get repositioned via JS click-outside logic, but CSS safety net: */
+  .opponent-property-popover.popover-top-left,
+  .opponent-property-popover.popover-bottom-left {
+    left: 0;
+    right: auto;
+  }
+
+  .opponent-property-popover.popover-top-right,
+  .opponent-property-popover.popover-bottom-right {
+    right: 0;
+    left: auto;
+  }
+
+  .opponent-popover-list {
+    max-height: 130px;
+  }
+}
+
+/* Header Row */
+.opponent-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.opponent-popover-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.opponent-popover-title {
+  font-size: 11.5px;
+  font-weight: 850;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.opponent-popover-count {
+  font-size: 9px;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.opponent-popover-close-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.12s ease;
+}
+
+.opponent-popover-close-btn:hover {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+/* Strategic Metrics Strip */
+.opponent-popover-intel-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.intel-metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.intel-metric-label {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.4px;
+}
+
+.intel-metric-val {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #047857;
+  font-variant-numeric: tabular-nums;
+}
+
+.intel-metric-val.font-rose {
+  color: #e11d48;
+}
+
+/* Monopoly Threat Alert */
+.opponent-monopoly-alert {
+  margin: 6px 0 4px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.3;
+}
+
+.opponent-monopoly-alert.active {
+  background: #fef2f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+}
+
+.opponent-monopoly-alert.near {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+}
+
+.monopoly-fire-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e11d48;
+  flex-shrink: 0;
+}
+
+/* Property Items List */
+.opponent-popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 170px;
+  overflow-y: auto;
+  padding: 4px 0;
+  margin: 4px 0;
+}
+
+.opponent-popover-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.opponent-popover-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.opponent-prop-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3.5px 6px;
+  border-radius: 5px;
+  background: #f8fafc;
+  border: 1px solid transparent;
+  transition: all 0.12s ease;
+  cursor: pointer;
+}
+
+.opponent-prop-row:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.opponent-prop-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.opponent-prop-info {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.opponent-prop-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opponent-prop-guj {
+  font-size: 9px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.opponent-prop-rent {
+  font-size: 10.5px;
+  font-weight: 850;
+  color: #047857;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* Trade Button */
+.opponent-popover-trade-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid #0f172a;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: all 0.15s ease;
+}
+
+.opponent-popover-trade-btn:hover {
+  background: #1e293b;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES
+   ========================================================================== */
+
+/* Desktop Screens (≥ 1024px width and ≥ 600px height) */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .minimal-hud-wrapper.pos-top-left     { top: 12px; left: 12px; }
+  .minimal-hud-wrapper.pos-top-right    { top: 12px; right: 12px; }
+  .minimal-hud-wrapper.pos-bottom-left  { bottom: 12px; left: 12px; }
+  .minimal-hud-wrapper.pos-bottom-right { bottom: 12px; right: 12px; }
+
+  .minimal-hud-chip {
+    padding: 6px 12px 6px 8px;
+    gap: 10px;
+    border-radius: 8px;
+    max-width: 240px;
+  }
+
+  .hud-avatar-wrapper { width: 32px; height: 32px; }
+  .hud-text-stack { min-width: 70px; max-width: 135px; gap: 2px; }
+  .hud-player-name { font-size: 12px; max-width: 110px; }
+  .hud-role-tag { font-size: 8px; padding: 1.5px 5px; }
+  .hud-turn-timer { font-size: 9px; padding: 1.5px 5px; }
+  .hud-wealth-line { gap: 5px; }
+  .hud-currency-sym { font-size: 11.5px; }
+  .hud-balance-val { font-size: 14px; }
+  .hud-card-icon-btn { padding: 3px 6px; }
+  .hud-card-badge { font-size: 9px; }
+  .hud-action-btn { width: 26px; height: 26px; }
+  .hud-badge-you { font-size: 7.5px; padding: 1px 4px; }
+  .hud-badge-bot { font-size: 7.5px; }
+}
+
+/* Tablets (769px – 1099px) */
+@media (max-width: 1099px) {
+  .minimal-hud-wrapper.pos-top-left     { top: max(10px, calc(env(safe-area-inset-top) + 8px)); left: max(16px, calc(env(safe-area-inset-left) + 10px)); }
+  .minimal-hud-wrapper.pos-top-right    { top: max(10px, calc(env(safe-area-inset-top) + 8px)); right: max(16px, calc(env(safe-area-inset-right) + 10px)); }
+  .minimal-hud-wrapper.pos-bottom-left  { bottom: max(10px, calc(env(safe-area-inset-bottom) + 8px)); left: max(16px, calc(env(safe-area-inset-left) + 10px)); }
+  .minimal-hud-wrapper.pos-bottom-right { bottom: max(10px, calc(env(safe-area-inset-bottom) + 8px)); right: max(16px, calc(env(safe-area-inset-right) + 10px)); }
+
+  .minimal-hud-chip {
+    padding: 4px 8px 4px 6px;
+    gap: 7px;
+  }
+
+  .hud-avatar-wrapper { width: 28px; height: 28px; }
+  .hud-text-stack { min-width: 52px; max-width: 105px; }
+  .hud-player-name { font-size: 10.5px; max-width: 88px; }
+  .hud-balance-val { font-size: 12px; }
+}
+
+/* Mobile Portrait (≤ 768px) */
+@media (max-width: 768px) {
+  .minimal-hud-wrapper.pos-top-left     { top: max(10px, calc(env(safe-area-inset-top) + 8px)); left: max(14px, calc(env(safe-area-inset-left) + 8px)); }
+  .minimal-hud-wrapper.pos-top-right    { top: max(10px, calc(env(safe-area-inset-top) + 8px)); right: max(14px, calc(env(safe-area-inset-right) + 8px)); }
+  .minimal-hud-wrapper.pos-bottom-left  { bottom: max(10px, calc(env(safe-area-inset-bottom) + 8px)); left: max(14px, calc(env(safe-area-inset-left) + 8px)); }
+  .minimal-hud-wrapper.pos-bottom-right { bottom: max(10px, calc(env(safe-area-inset-bottom) + 8px)); right: max(14px, calc(env(safe-area-inset-right) + 8px)); }
+
+  .minimal-hud-chip {
+    max-width: calc(50vw - 12px);
+    padding: 4px 6px 4px 5px;
+    gap: 5px;
+    border-radius: 7px;
+  }
+
+  .hud-avatar-wrapper { width: 22px; height: 22px; }
+
+  .hud-text-stack {
+    min-width: 0;
+    max-width: 90px;
+    gap: 0;
+  }
+
+  .hud-player-name {
+    font-size: 9px;
+    max-width: 70px;
+  }
+
+  .hud-balance-val { font-size: 10.5px; }
+
+  .hud-card-icon-btn {
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+
+  .hud-card-badge { font-size: 8px; padding: 0 2px; }
+
+  .hud-action-btn { width: 21px; height: 21px; }
+
+  .hud-badge-you  { font-size: 7px; padding: 0.5px 3px; }
+  .hud-badge-bot  { font-size: 7px; }
+
+  /* Ping bar: stays near top-center but can't be wider than the gap between HUDs */
+  .bottom-match-ping-bar {
+    top: 6px;
+    font-size: 9px;
+    padding: 2px 10px;
+    gap: 6px;
+    max-width: calc(100vw - 200px);
+  }
+
+  .bottom-match-ping-bar .latest-log-pill { display: none; }
+  .bottom-match-ping-bar .version-text    { display: none; }
+}
+
+/* Mobile Landscape / Short Screens (max-height ≤ 540px) */
+@media (max-height: 540px) {
+  /* Generous side offsets so landscape notch/punch-hole never clips corner HUDs */
+  .minimal-hud-wrapper.pos-top-left     { top: max(8px, calc(env(safe-area-inset-top) + 4px)); left: max(22px, calc(env(safe-area-inset-left) + 14px)); }
+  .minimal-hud-wrapper.pos-top-right    { top: max(8px, calc(env(safe-area-inset-top) + 4px)); right: max(22px, calc(env(safe-area-inset-right) + 14px)); }
+  .minimal-hud-wrapper.pos-bottom-left  { bottom: max(8px, calc(env(safe-area-inset-bottom) + 4px)); left: max(22px, calc(env(safe-area-inset-left) + 14px)); }
+  .minimal-hud-wrapper.pos-bottom-right { bottom: max(8px, calc(env(safe-area-inset-bottom) + 4px)); right: max(22px, calc(env(safe-area-inset-right) + 14px)); }
+
+  .minimal-hud-chip {
+    max-width: 145px;
+    padding: 3px 6px 3px 5px;
+    gap: 5px;
+    border-radius: 6px;
+  }
+
+  .hud-avatar-wrapper { width: 24px; height: 24px; }
+
+  .hud-text-stack {
+    min-width: 0;
+    max-width: 125px;
+    gap: 0;
+  }
+
+  .hud-player-name { font-size: 10px; max-width: 95px; }
+  .hud-currency-sym { font-size: 9.5px; }
+  .hud-balance-val { font-size: 11px; }
+  .hud-action-btn  { width: 20px; height: 20px; }
+
+  /* Opponent intelligence popover neatly fits in side margin without covering board */
+  .opponent-property-popover {
+    width: min(235px, calc(50vw - 16px));
+    max-height: min(270px, calc(100vh - 20px));
+    padding: 7px 9px;
+    border-radius: 8px;
+  }
+
+  .opponent-popover-list {
+    max-height: 95px;
+    padding: 2px 0;
+  }
+
+  .opponent-popover-intel-strip {
+    padding: 4px 0;
+  }
+
+  .bottom-match-ping-bar {
+    top: 4px;
+    font-size: 8.5px;
+    padding: 1.5px 8px;
+    max-width: calc(100vw - 220px);
+  }
+
+  .bottom-match-ping-bar .latest-log-pill { display: none; }
+  .bottom-match-ping-bar .version-text    { display: none; }
+}
+
+
+

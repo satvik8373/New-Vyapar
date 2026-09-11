@@ -1,0 +1,818 @@
+/* ==========================================================================
+   NAVO VYAPAR — GUJARAT TITLE DEED PROPERTY SHEET
+   Clean, premium 2-column layout without emojis, clutter, or boxy artifacts
+   ========================================================================== */
+
+/* ══ BACKDROP OVERLAY ══ */
+.candy-deed-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, calc(env(safe-area-inset-top) + 6px)) max(16px, calc(env(safe-area-inset-right) + 8px)) max(12px, calc(env(safe-area-inset-bottom) + 6px)) max(16px, calc(env(safe-area-inset-left) + 8px));
+  background: rgba(8, 15, 35, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: deedFade 0.2s ease;
+}
+
+@keyframes deedFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ══ MAIN CARD CONTAINER ══ */
+.candy-deed-modal {
+  position: relative;
+  width: min(690px, calc(100vw - 28px));
+  max-height: min(92dvh, 560px);
+  height: auto;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 24px 50px -12px rgba(15, 23, 42, 0.3),
+    0 8px 18px -6px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+  animation: deedPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes deedPop {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ══════════════════════════════════════════════
+   1. UNIFIED FULL-WIDTH TOP COLOR BAND
+   ══════════════════════════════════════════════ */
+.candy-deed-top-band {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  min-height: 48px;
+  box-sizing: border-box;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.candy-deed-top-band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.12) 100%);
+  pointer-events: none;
+}
+
+.candy-deed-band-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  z-index: 2;
+}
+
+.candy-deed-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.candy-deed-badge-text {
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.candy-deed-slot-pill {
+  font-size: 8px;
+  font-weight: 850;
+  padding: 1.5px 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.candy-deed-band-region {
+  font-size: clamp(14px, 3.2vw, 18px);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+
+/* Single Unified Close Button */
+.candy-deed-close {
+  position: relative;
+  z-index: 5;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.candy-deed-close:hover  { background: rgba(0, 0, 0, 0.42); transform: scale(1.06); }
+.candy-deed-close:active { transform: scale(0.94); }
+
+/* ══════════════════════════════════════════════
+   2. TWO-COLUMN BODY CONTAINER
+   ══════════════════════════════════════════════ */
+.candy-deed-columns {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: #ffffff;
+  align-items: stretch;
+}
+
+/* Left Column: Seamless Scenic Photography & Turn Actions */
+.candy-deed-left-pane {
+  width: 295px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid rgba(226, 232, 240, 0.9);
+  background: #0f172a;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.candy-deed-left-pane.photo-only {
+  justify-content: flex-start;
+}
+
+.candy-deed-scenic-header {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.candy-deed-scenic-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(15, 23, 42, 0.08) 0%,
+    rgba(15, 23, 42, 0.15) 35%,
+    rgba(15, 23, 42, 0.68) 72%,
+    rgba(15, 23, 42, 0.94) 100%
+  );
+  z-index: 1;
+}
+
+.candy-deed-header-bottom {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 14px 16px 14px;
+  gap: 8px;
+}
+
+.candy-deed-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.candy-deed-title {
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.15;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  word-break: break-word;
+}
+
+.candy-deed-gujarati {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 650;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.candy-deed-price-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 850;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+/* Turn Action Buttons Box (Docked cleanly at bottom of left pane) */
+.candy-deed-actions {
+  width: 100%;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.deed-dual-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.candy-owner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ══════════════════════════════════════════════
+   3. RIGHT COLUMN: RENT SCHEDULE & LEDGER
+   ══════════════════════════════════════════════ */
+.candy-deed-right-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.candy-deed-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203,213,225,0.7) transparent;
+}
+
+.candy-deed-body::-webkit-scrollbar       { width: 4px; }
+.candy-deed-body::-webkit-scrollbar-track { background: transparent; }
+.candy-deed-body::-webkit-scrollbar-thumb { background: rgba(203,213,225,0.7); border-radius: 4px; }
+
+/* Regional Monopoly banner */
+.candy-deed-monopoly-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #92400e;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* Base rent row */
+.candy-deed-base-rent-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.base-rent-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #475569;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.base-rent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.base-rent-val {
+  font-size: 14px;
+  font-weight: 850;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rent schedule */
+.candy-rent-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #ffffff;
+  border-radius: 9px;
+  padding: 5px 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.candy-schedule-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #475569;
+  transition: background 0.15s ease;
+}
+
+.candy-schedule-row:nth-child(even) { background: #f8fafc; }
+
+.candy-schedule-row.tier-active {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #10b981;
+  font-weight: 800;
+}
+
+.candy-schedule-row.tier-active .schedule-val { color: #059669; font-weight: 850; }
+
+.schedule-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+}
+
+.current-tier-badge {
+  font-size: 7.5px;
+  font-weight: 850;
+  background: #059669;
+  color: #ffffff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 3px;
+}
+
+.schedule-val {
+  font-weight: 800;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.candy-schedule-row.hotel-row {
+  border-top: 1px dashed rgba(203,213,225,0.7);
+  padding-top: 5px;
+  margin-top: 1px;
+}
+
+.hotel-val {
+  color: #e11d48;
+  font-size: 12.5px;
+  font-weight: 850;
+}
+
+/* Economic ledger 2×2 grid */
+.candy-deed-ledger-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.deed-ledger-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+  padding: 5px 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+}
+
+.ledger-label {
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.ledger-val {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════════════
+   4. OWNERSHIP & BUYER CONTEXT STRIPS
+   ══════════════════════════════════════════════ */
+.owner-left,
+.buyer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.owner-info,
+.buyer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.candy-owner-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.owner-status-label {
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.owner-name {
+  font-size: 12px;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.owner-rent-due {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.rent-due-label {
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.rent-due-val {
+  font-size: 13px;
+  font-weight: 850;
+  color: #e11d48;
+  font-variant-numeric: tabular-nums;
+}
+
+.candy-buyer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+}
+
+.buyer-name {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.buyer-balance {
+  font-size: 9.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════
+   5. RESPONSIVE BREAKPOINTS
+   ══════════════════════════════════════════════ */
+
+/* Mobile portrait ≤ 600px */
+@media (max-width: 600px) {
+  .candy-deed-overlay {
+    padding: 8px;
+    align-items: center;
+  }
+
+  .candy-deed-modal {
+    width: min(400px, calc(100vw - 16px));
+    max-height: 94dvh;
+    border-radius: 12px;
+  }
+
+  .candy-deed-top-band {
+    padding: 8px 12px;
+    min-height: 42px;
+  }
+
+  .candy-deed-band-region {
+    font-size: 15px;
+  }
+
+  .candy-deed-columns {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .candy-deed-left-pane {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .candy-deed-scenic-header {
+    height: 125px;
+    min-height: 125px;
+    flex: none;
+  }
+
+  .candy-deed-header-bottom {
+    padding: 8px 12px 10px;
+  }
+
+  .candy-deed-title {
+    font-size: 16px;
+  }
+
+  .candy-deed-right-pane {
+    overflow: visible;
+  }
+
+  .candy-deed-body {
+    padding: 10px 12px;
+    gap: 6px;
+    overflow-y: visible;
+  }
+}
+
+/* Mobile landscape / low vertical height (≤ 520px height) */
+@media (max-height: 520px) {
+  .candy-deed-modal {
+    width: min(660px, calc(100vw - 20px));
+    max-height: min(95dvh, 360px);
+    border-radius: 10px;
+  }
+
+  .candy-deed-top-band {
+    padding: 6px 12px;
+    min-height: 38px;
+  }
+
+  .candy-deed-close {
+    width: 26px;
+    height: 26px;
+  }
+
+  .candy-deed-band-region {
+    font-size: 14px;
+  }
+
+  .candy-deed-columns {
+    flex-direction: row;
+  }
+
+  .candy-deed-left-pane {
+    width: 250px;
+  }
+
+  .candy-deed-scenic-header {
+    min-height: 140px;
+  }
+
+  .candy-deed-header-bottom {
+    padding: 8px 12px 8px;
+  }
+
+  .candy-deed-title {
+    font-size: 15px;
+  }
+
+  .candy-deed-body {
+    padding: 6px 12px;
+    gap: 4px;
+  }
+
+  .candy-deed-base-rent-row {
+    padding: 4px 8px;
+  }
+
+  .candy-schedule-row {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   DESKTOP ONLY ENHANCEMENTS (≥ 769px width & > 520px height)
+   Normal, prominent typography for city name, prices, and rent ledger
+   ══════════════════════════════════════════════ */
+@media (min-width: 769px) and (min-height: 521px) {
+  .candy-deed-modal {
+    width: min(720px, calc(100vw - 32px));
+    border-radius: 14px;
+  }
+
+  .candy-deed-top-band {
+    padding: 12px 18px;
+    min-height: 52px;
+  }
+
+  .candy-deed-badge-text {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+  }
+
+  .candy-deed-slot-pill {
+    font-size: 8.5px;
+    padding: 2px 8px;
+  }
+
+  .candy-deed-band-region {
+    font-size: 20px;
+  }
+
+  .candy-deed-close {
+    width: 32px;
+    height: 32px;
+  }
+
+  .candy-deed-left-pane {
+    width: 315px;
+  }
+
+  .candy-deed-scenic-header {
+    min-height: 220px;
+  }
+
+  .candy-deed-header-bottom {
+    padding: 16px 18px 16px;
+    gap: 10px;
+  }
+
+  /* Normal, prominent City Name */
+  .candy-deed-title {
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.12;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+  }
+
+  .candy-deed-gujarati {
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 1px;
+  }
+
+  /* Normal, prominent Price Badge */
+  .candy-deed-price-badge {
+    font-size: 16px;
+    font-weight: 900;
+    padding: 5px 12px;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  .candy-deed-price-badge .currency-coin-svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* Right Column: Normal Sized Financial Ledger */
+  .candy-deed-body {
+    padding: 14px 18px;
+    gap: 8px;
+  }
+
+  .base-rent-label {
+    font-size: 11px;
+  }
+
+  .base-rent-val {
+    font-size: 17px;
+    font-weight: 900;
+    gap: 6px;
+  }
+
+  .base-rent-val .currency-coin-svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .candy-schedule-row {
+    font-size: 13.5px;
+    padding: 5.5px 10px;
+  }
+
+  .schedule-val {
+    font-size: 14px;
+    font-weight: 850;
+  }
+
+  .hotel-val {
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  .deed-ledger-cell {
+    padding: 6px 10px;
+  }
+
+  .ledger-label {
+    font-size: 9px;
+  }
+
+  .ledger-val {
+    font-size: 13.5px;
+    font-weight: 850;
+  }
+
+  .candy-owner-strip {
+    padding: 8px 12px;
+  }
+
+  .owner-name {
+    font-size: 13px;
+  }
+
+  .rent-due-val {
+    font-size: 14px;
+  }
+
+  .candy-buyer-bar {
+    padding: 8px 12px;
+  }
+
+  .buyer-name {
+    font-size: 12.5px;
+  }
+
+  .buyer-balance {
+    font-size: 10.5px;
+  }
+}
+

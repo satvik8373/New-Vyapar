@@ -1,0 +1,27 @@
+{
+  "name": "NAVO VYAPAR — Gujarat Business Board Game",
+  "short_name": "Navo Vyapar",
+  "description": "Authentic Gujarat commerce, trade, and real estate monopoly board game.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "theme_color": "#0f172a",
+  "background_color": "#f8fafc",
+  "icons": [
+    {
+      "src": "/assets/images/app_icon.jpg",
+      "sizes": "512x512 192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["games", "entertainment", "board"],
+  "screenshots": []
+}

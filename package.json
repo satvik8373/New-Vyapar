@@ -1,0 +1,49 @@
+{
+  "name": "navo-vyapar",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "dev:server": "tsx src/server/index.ts",
+    "test": "tsx tests/game-loop.test.ts"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^5.0.27",
+    "@colyseus/ws-transport": "^0.18.2",
+    "@emotion/react": "^11.13.0",
+    "@emotion/styled": "^11.13.0",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@fortawesome/react-fontawesome": "^3.5.0",
+    "@mui/icons-material": "^5.16.7",
+    "@mui/material": "^5.16.7",
+    "canvas-confetti": "^1.9.3",
+    "colyseus": "^0.18.5",
+    "colyseus.js": "^0.16.22",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "firebase": "^12.19.0",
+    "framer-motion": "^11.3.28",
+    "lucide-react": "^1.44.0",
+    "phaser": "^3.88.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.13.5",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "tsx": "^4.23.13",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  },
+  "overrides": {
+    "@colyseus/schema": "^5.0.27"
+  }
+}

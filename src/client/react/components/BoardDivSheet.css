@@ -1,0 +1,1488 @@
+:root {
+  --board-road-padding: 20px;      /* width of the visible road lane */
+  --board-road-centerline: 10px;   /* where the dashed lane centerline sits */
+  --board-h-inset: 250px;
+  --board-v-inset: 20px;
+}
+
+/* ── Stage wrapper ── */
+.board-stage-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 0;
+  overflow: hidden;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+/* ═══════════════════════════════════════════════════════
+   OUTER FRAME — tarmac road circuit
+   The padding gap between frame edge and inner grid IS
+   the road lane. Cars drive in that lane.
+   ═══════════════════════════════════════════════════════ */
+.board-outer-frame {
+  position: relative;
+  width: min(calc(100dvh - var(--board-v-inset)), calc(100vw - var(--board-h-inset)), 720px);
+  height: min(calc(100dvh - var(--board-v-inset)), calc(100vw - var(--board-h-inset)), 720px);
+  aspect-ratio: 1 / 1;
+  padding: var(--board-road-padding);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+
+  /* Warm dark tarmac road surface */
+  background-color: #2c2f36;
+  background-image: radial-gradient(ellipse at 50% 50%, #363a42 0%, #20232a 100%);
+
+  /* Single clean border — just enough to frame the board */
+  border: 2px solid #1a1d23;
+
+  box-shadow:
+    0 20px 48px -10px rgba(0, 0, 0, 0.5),
+    0 6px 16px -4px rgba(0, 0, 0, 0.28);
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* White outer edge lane-line */
+.board-outer-frame::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 3;
+  box-sizing: border-box;
+}
+
+/* Yellow dashed centerline — the classic road lane divider */
+.board-outer-frame::after {
+  content: '';
+  position: absolute;
+  top: var(--board-road-centerline);
+  left: var(--board-road-centerline);
+  right: var(--board-road-centerline);
+  bottom: var(--board-road-centerline);
+  border: 1.5px dashed rgba(250, 204, 21, 0.45);
+  border-radius: 5px;
+  pointer-events: none;
+  z-index: 3;
+  box-sizing: border-box;
+}
+
+/* 9x9 CSS Grid: Floating Separated Cards (Balanced 1:1 Proportions) */
+.board-grid-9x9 {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
+  grid-template-rows: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
+  gap: clamp(2px, 0.5vw, 3.5px);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  /* overflow must be VISIBLE so car tokens on the perimeter road are not clipped */
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   BOARD CELL BASE: Floating Separated Card (Tactile 3D Island)
+   ========================================================================== */
+.board-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  box-shadow:
+    0 4px 12px -2px rgba(0, 0, 0, 0.22),
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, opacity 0.22s ease, filter 0.22s ease;
+}
+
+/* Floating Card Hover Elevation */
+.board-cell:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow:
+    0 14px 28px -4px rgba(0, 0, 0, 0.35),
+    0 5px 12px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  border-color: #cbd5e1;
+  z-index: 15;
+}
+
+.board-cell.tile-active {
+  z-index: 20;
+  border-color: #2563eb !important;
+  box-shadow:
+    0 0 0 2px #2563eb,
+    0 8px 24px -2px rgba(15, 23, 42, 0.3);
+}
+
+/* ==========================================================================
+   CLEAN INTEGRATED OWNER FOOTER BAR ON TILE
+   ========================================================================== */
+.tile-footer-owner-pill {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 4px;
+}
+
+.tile-footer-owner-pill .owner-bullet-white {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  flex-shrink: 0;
+}
+
+.tile-footer-owner-pill .cur-val-owner {
+  font-size: 8px;
+  font-weight: 850;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.tile-footer-vertical-owner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 0;
+}
+
+.tile-footer-vertical-owner .owner-bullet-white {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background-color: #ffffff;
+}
+
+.tile-footer-vertical-owner .cur-val-owner {
+  font-size: 6.5px;
+  font-weight: 850;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  line-height: 1.1;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Owner Hover Highlight (when hovering player card in corner HUD) */
+.board-cell.tile-owner-highlighted {
+  transform: translateY(-4px) scale(1.05) !important;
+  z-index: 35 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  border: 2.5px solid var(--owner-color, #2563eb) !important;
+  box-shadow:
+    0 12px 28px -4px rgba(15, 23, 42, 0.35),
+    0 0 0 2px #ffffff !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Dimmed tiles, corners, and central diorama during owner hover (Soft, readable, and always clickable) */
+.board-cell.tile-dimmed-on-hover,
+.board-corner-cell.tile-dimmed-on-hover {
+  opacity: 0.65 !important;
+  transition: opacity 0.18s ease !important;
+}
+
+.board-center-canvas.center-dimmed-on-hover {
+  opacity: 0.75 !important;
+  transition: opacity 0.18s ease !important;
+}
+
+/* Green House & Hotel Indicator Strip */
+.tile-house-indicator-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5px;
+  margin-left: 3px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 1px 3px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.tile-house-pip,
+.tile-hotel-pip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mortgaged Tile State */
+.board-cell.tile-mortgaged {
+  filter: grayscale(0.4) opacity(0.85);
+}
+
+.tile-mortgage-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  background: rgba(180, 83, 9, 0.95);
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1.5px 5px;
+  border-radius: 3px;
+  z-index: 10;
+  letter-spacing: 0.5px;
+  border: 1px solid #fef3c7;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   28 EDGE CELLS: Flush Straight Headers & Footers (No Corner Gaps)
+   ========================================================================== */
+
+/* ==========================================================================
+   UNIFIED BOARD TILE CARDS (3-Layer Universal Directional Flow)
+   - Outer Edge: Price / Owner Footer (touching road)
+   - Middle Stage: High-Resolution 3D City Landmark Image
+   - Inner Edge: Colored City Name Header (facing Board Center)
+   ========================================================================== */
+
+/* ── Top & Bottom Edges: Vertical Card Slice (flex-direction: column) ── */
+.board-cell.tile-edge-top,
+.board-cell.tile-edge-bottom {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+}
+
+.board-cell.tile-edge-top .tile-header-bar,
+.board-cell.tile-edge-bottom .tile-header-bar {
+  width: 100% !important;
+  height: 16px !important;
+  min-height: 15px !important;
+  max-height: 17px !important;
+  padding: 0 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 82%, black) 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.board-cell.tile-edge-top .tile-header-bar {
+  border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.board-cell.tile-edge-bottom .tile-header-bar {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.board-cell.tile-edge-top .tile-footer-bar,
+.board-cell.tile-edge-bottom .tile-footer-bar {
+  width: 100% !important;
+  height: 12px !important;
+  min-height: 11px !important;
+  max-height: 13px !important;
+  padding: 0 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-radius: 0 !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.board-cell.tile-edge-top .tile-footer-bar {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.board-cell.tile-edge-bottom .tile-footer-bar {
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+/* ── Left & Right Edges: Horizontal Card Slice (flex-direction: row, vertical text) ── */
+.board-cell.tile-edge-left,
+.board-cell.tile-edge-right {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: stretch !important;
+}
+
+.board-cell.tile-edge-left .tile-header-bar,
+.board-cell.tile-edge-right .tile-header-bar {
+  width: 13px !important;
+  min-width: 12px !important;
+  max-width: 14px !important;
+  height: 100% !important;
+  padding: 2px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 82%, black) 100%) !important;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35);
+}
+
+.board-cell.tile-edge-left .tile-header-bar {
+  border-left: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.board-cell.tile-edge-right .tile-header-bar {
+  border-right: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.board-cell.tile-edge-left .tile-footer-bar,
+.board-cell.tile-edge-right .tile-footer-bar {
+  width: 11px !important;
+  min-width: 10px !important;
+  max-width: 12px !important;
+  height: 100% !important;
+  padding: 2px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-radius: 0 !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.board-cell.tile-edge-left .tile-footer-bar {
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.board-cell.tile-edge-right .tile-footer-bar {
+  border-left: 1px solid #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY: HORIZONTAL (TOP/BOTTOM) & VERTICAL (LEFT/RIGHT)
+   ========================================================================== */
+
+/* 1. Universal Top & Bottom Edge Labels (Horizontal) */
+.board-cell.tile-edge-top .tile-header-label,
+.board-cell.tile-edge-bottom .tile-header-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: clamp(4.2px, 0.58vw, 5.2px);
+  text-transform: uppercase;
+  letter-spacing: -0.3px;
+  line-height: 1;
+  text-align: center;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  max-width: 100%;
+  padding: 0 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.board-cell.tile-edge-top .tile-footer-price-text,
+.board-cell.tile-edge-bottom .tile-footer-price-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(5.5px, 0.78vw, 7.2px);
+  font-weight: 850;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  line-height: 1;
+  text-align: center;
+  display: block;
+}
+
+.board-cell.tile-edge-top .tile-footer-owner-text,
+.board-cell.tile-edge-bottom .tile-footer-owner-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(5px, 0.72vw, 6.8px);
+  font-weight: 900;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  line-height: 1;
+  text-align: center;
+  display: block;
+  text-transform: uppercase;
+}
+
+.board-cell.tile-edge-top .tile-footer-badge-text,
+.board-cell.tile-edge-bottom .tile-footer-badge-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(4.6px, 0.65vw, 5.8px);
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  line-height: 1;
+  text-align: center;
+  display: block;
+}
+
+/* 2. Left & Right Edge Labels (Vertical Text facing Center Diorama) */
+.board-cell.tile-edge-left .tile-header-label,
+.board-cell.tile-edge-right .tile-header-label {
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 850;
+  font-size: clamp(3.8px, 0.48vw, 4.6px);
+  text-transform: uppercase;
+  letter-spacing: -0.32px;
+  line-height: 1;
+  text-align: center;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  max-height: 100%;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.board-cell.tile-edge-right .tile-header-label {
+  transform: rotate(180deg) !important;
+}
+
+.board-cell.tile-edge-left .tile-footer-price-text,
+.board-cell.tile-edge-right .tile-footer-price-text {
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(4.6px, 0.62vw, 5.8px);
+  font-weight: 850;
+  color: #0f172a;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  max-height: 100%;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.board-cell.tile-edge-right .tile-footer-price-text {
+  transform: rotate(180deg) !important;
+}
+
+.board-cell.tile-edge-left .tile-footer-owner-text,
+.board-cell.tile-edge-right .tile-footer-owner-text {
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(4.2px, 0.58vw, 5.2px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  max-height: 100%;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  box-sizing: border-box;
+  text-transform: uppercase;
+}
+
+.board-cell.tile-edge-right .tile-footer-owner-text {
+  transform: rotate(180deg) !important;
+}
+
+.board-cell.tile-edge-left .tile-footer-badge-text,
+.board-cell.tile-edge-right .tile-footer-badge-text {
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(4.5px, 0.65vw, 5.8px);
+  font-weight: 800;
+  color: #64748b;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  max-height: 100%;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.board-cell.tile-edge-right .tile-footer-badge-text {
+  transform: rotate(180deg) !important;
+}
+
+/* Vertical house development pip strip on left/right edge */
+.tile-edge-left .tile-house-indicator-strip,
+.tile-edge-right .tile-house-indicator-strip {
+  flex-direction: column;
+  gap: 1px;
+  margin-left: 0;
+  margin-top: 1.5px;
+  padding: 1px;
+}
+
+/* ==========================================================================
+   MIDDLE GRAPHIC STAGE (Seamless Transparent Asset Fitting, Big Landmark)
+   ========================================================================== */
+.tile-graphic-stage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: radial-gradient(circle at 50% 50%, #ffffff 50%, #fafaf9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1px;
+  box-sizing: border-box;
+}
+
+.tile-graphic-sprite {
+  width: auto;
+  height: auto;
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+  user-select: none;
+  pointer-events: none;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.22s ease;
+}
+
+.board-cell:hover .tile-graphic-sprite {
+  transform: scale(1.08);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.16));
+}
+
+
+
+/* Base Wrapper for Tiles & Corners: allows token dock to sit on the perimeter road */
+.board-tile-wrapper,
+.board-corner-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+/* (Tokens dock styling defined in dedicated section at end of file) */
+
+/* ==========================================================================
+   4 REFINED CORNER CELLS: Floating Separated Cards
+   ========================================================================== */
+.board-corner-cell {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: stretch !important;
+  height: 100% !important;
+  width: 100% !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-sizing: border-box;
+  border-radius: 6px !important;
+  overflow: hidden;
+  box-shadow:
+    0 5px 14px -2px rgba(0, 0, 0, 0.22),
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.board-corner-cell:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow:
+    0 14px 28px -4px rgba(0, 0, 0, 0.35),
+    0 5px 12px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  z-index: 15;
+}
+
+.corner-header-bar {
+  width: 100%;
+  height: 18px;
+  min-height: 17px;
+  max-height: 19px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, var(--corner-accent, #334155) 0%, color-mix(in srgb, var(--corner-accent, #334155) 80%, black) 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.corner-header-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(5.2px, 0.75vw, 6.8px);
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: -0.1px;
+  color: #ffffff !important;
+  text-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.4);
+  line-height: 1.05;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  white-space: normal;
+  text-align: center;
+  width: 100%;
+}
+
+.corner-body-canvas {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  background: radial-gradient(circle at 50% 50%, #ffffff 40%, #fafaf9 100%);
+  overflow: hidden;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.corner-graphic-sprite {
+  width: auto;
+  height: auto;
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.12));
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.22s ease;
+}
+
+.board-corner-cell:hover .corner-graphic-sprite {
+  transform: scale(1.08);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.16));
+}
+
+.corner-footer-bar {
+  width: 100%;
+  height: 13px;
+  min-height: 12px;
+  max-height: 14px;
+  padding: 0 2px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.corner-footer-label {
+  font-size: clamp(5px, 0.7vw, 6.2px);
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.1px;
+  color: #475569;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Corner Emblem Badges */
+.corner-go-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #059669;
+}
+
+.corner-go-arrow {
+  width: 18px;
+  height: 18px;
+}
+
+.corner-go-text {
+  font-size: 17px;
+  font-weight: 950;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.corner-oasis-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+}
+
+.corner-bank-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4f46e5;
+}
+
+.corner-tax-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e11d48;
+}
+
+/* ==========================================================================
+   CENTRAL PLAY AREA
+   Layout: column flex — timer top, diorama middle (grows), dock bottom
+   ========================================================================== */
+/* ==========================================================================
+   CENTRAL PLAY AREA (Clean Light Theme, Seamless with Cards)
+   ========================================================================== */
+.board-center-canvas {
+  grid-column: 2 / 9;
+  grid-row: 2 / 9;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 6px;
+  box-shadow:
+    0 4px 14px -2px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 4px;
+}
+
+/* Diorama — pure, clean emblem centered on board with subtle natural depth */
+.board-center-diorama {
+  width: auto;
+  height: auto;
+  max-width: 72%;
+  max-height: 70%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Hide center image properly when announcement is active */
+.board-center-diorama.diorama-hidden {
+  opacity: 0;
+  transform: scale(0.92);
+  pointer-events: none;
+}
+
+/* Clean Floating Action Bar (Dice + Roll / End Turn) — No Wrapping Card Container */
+.center-actions-simple {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 15;
+  pointer-events: auto;
+  white-space: nowrap !important;
+}
+
+.center-jail-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap !important;
+}
+
+/* Custom Sleek Single-Line Pill Action Buttons */
+.board-center-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 25px;
+  padding: 0 11px;
+  border-radius: 9999px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  white-space: nowrap !important;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  flex-shrink: 0;
+}
+
+.board-center-action-btn:hover {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
+}
+
+.board-center-action-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.board-center-action-btn.btn-roll {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.board-center-action-btn.btn-end-turn {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.board-center-action-btn.btn-jail-pay {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.board-center-action-btn.btn-jail-card {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* ==========================================================================
+   CENTER STAGE IN-GAME ANNOUNCEMENT CARD
+   Authentic board event presentation in center screen (Not a toast notification)
+   ========================================================================== */
+.board-center-announcement-card {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 195px);
+  padding: 8px 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 14px 34px -4px rgba(15, 23, 42, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 30;
+  box-sizing: border-box;
+  animation: announcementCenterPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes announcementCenterPop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -44%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.center-announcement-badge {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 8px;
+  font-weight: 850;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #ffffff;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  white-space: nowrap;
+}
+
+/* Event-type themed badges */
+.board-center-announcement-card.announcement-type-buy .center-announcement-badge {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.board-center-announcement-card.announcement-type-salary .center-announcement-badge {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+.board-center-announcement-card.announcement-type-chance .center-announcement-badge {
+  background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
+}
+
+.board-center-announcement-card.announcement-type-tax .center-announcement-badge,
+.board-center-announcement-card.announcement-type-jail .center-announcement-badge {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+.center-announcement-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+}
+
+.center-announcement-msg {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: 0.1px;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.center-announcement-amount {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #059669;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+
+.center-announcement-amount.is-plus {
+  color: #059669;
+}
+
+/* ==========================================================================
+   BOARD TILE WRAPPERS & PERIMETER ROAD TOKEN DOCKING
+   Each tile is wrapped so car tokens can be absolutely positioned
+   on the outer road perimeter (the 26px dark ring) without interfering
+   with card content.
+   ========================================================================== */
+
+/* Wrapper for edge (non-corner) tiles */
+.board-tile-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Wrapper for corner tiles */
+.board-corner-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PLAYER TOKEN DOCK — renders on the dedicated perimeter road circuit
+   The road padding ensures cars drive along the dashed road lane.
+   Zero overlap with city landmark illustrations, headers, or prices.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Base dock: absolutely positioned relative to the tile wrapper */
+.board-tokens-dock {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 40;
+  /* Smooth position transitions when players hop */
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── BOTTOM EDGE: tokens sit on the bottom road lane ── */
+.board-tile-wrapper.tile-edge-bottom .board-tokens-dock {
+  top: calc(100% + var(--board-road-centerline));
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: row;
+}
+
+/* ── TOP EDGE: tokens sit on the top road lane ── */
+.board-tile-wrapper.tile-edge-top .board-tokens-dock {
+  top: calc(-1 * var(--board-road-centerline));
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: row;
+}
+
+/* ── RIGHT EDGE: tokens sit on the right road lane ── */
+.board-tile-wrapper.tile-edge-right .board-tokens-dock {
+  left: calc(100% + var(--board-road-centerline));
+  top: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+}
+
+/* ── LEFT EDGE: tokens sit on the left road lane ── */
+.board-tile-wrapper.tile-edge-left .board-tokens-dock {
+  left: calc(-1 * var(--board-road-centerline));
+  top: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+}
+
+/* ── CORNER CELLS: tokens sit on the road at each corner ── */
+.board-corner-wrapper .board-tokens-dock {
+  top: calc(100% + var(--board-road-centerline));
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: row;
+}
+
+.board-corner-wrapper.corner-step-0 .board-tokens-dock {
+  /* START: bottom road, facing East */
+  top: calc(100% + var(--board-road-centerline));
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: row;
+}
+
+.board-corner-wrapper.corner-step-8 .board-tokens-dock {
+  /* JAIL: right road, facing North */
+  left: calc(100% + var(--board-road-centerline));
+  top: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+}
+
+.board-corner-wrapper.corner-step-16 .board-tokens-dock {
+  /* REST OASIS: top road, facing West */
+  top: calc(-1 * var(--board-road-centerline));
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: row;
+}
+
+.board-corner-wrapper.corner-step-24 .board-tokens-dock {
+  /* COMMERCIAL TAX: left road, facing South */
+  left: calc(-1 * var(--board-road-centerline));
+  top: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+}
+
+/* ── Tokens have clean soft drop shadow on board ── */
+.official-car-token {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+  transition: filter 0.2s ease;
+}
+
+.official-car-token.is-active {
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.7));
+}
+
+/* ==========================================================================
+   RESPONSIVE SCALING
+   ========================================================================== */
+
+/* 0. Desktop Displays (≥ 1024px width and ≥ 600px height) */
+@media (min-width: 1024px) and (min-height: 600px) {
+  :root {
+    --board-road-padding: 22px;
+    --board-road-centerline: 11px;
+    --board-h-inset: 270px;
+    --board-v-inset: 24px;
+  }
+
+  .board-outer-frame {
+    width: min(calc(100dvh - var(--board-v-inset)), calc(100vw - var(--board-h-inset)), 790px);
+    height: min(calc(100dvh - var(--board-v-inset)), calc(100vw - var(--board-h-inset)), 790px);
+    border-radius: 12px;
+  }
+
+  .center-actions-simple {
+    bottom: 12px;
+    gap: 12px;
+  }
+
+  .board-center-action-btn {
+    height: 34px;
+    padding: 0 16px;
+    font-size: 12.5px;
+    gap: 6px;
+  }
+}
+
+/* 1. Tablets & Narrow Desktops (769px – 1099px) */
+@media (max-width: 1099px) {
+  :root {
+    --board-road-padding: 22px;
+    --board-road-centerline: 11px;
+    --board-h-inset: 230px;
+  }
+
+  .board-outer-frame {
+    border-radius: 9px;
+    box-shadow: 0 14px 36px -8px rgba(0,0,0,0.45), 0 4px 12px -3px rgba(0,0,0,0.25);
+  }
+
+  .board-grid-9x9 { gap: 4px; }
+
+  .tile-header-label { font-size: clamp(5px, 0.9vw, 7px); }
+}
+
+/* 1b. Landscape Tablet */
+@media (max-width: 1099px) and (orientation: landscape) {
+  :root {
+    --board-road-padding: 20px;
+    --board-road-centerline: 10px;
+    --board-h-inset: 210px;
+  }
+}
+
+/* 2. Mobile Portrait (768px and below) */
+@media (max-width: 768px) {
+  :root {
+    --board-road-padding: 18px;
+    --board-road-centerline: 9px;
+    --board-h-inset: 16px;
+    --board-v-inset: 140px;
+  }
+
+  .board-stage-wrapper { padding: 2px 0; }
+
+  .board-outer-frame {
+    width: min(calc(100vw - var(--board-h-inset)), calc(100dvh - var(--board-v-inset)), 520px);
+    height: min(calc(100vw - var(--board-h-inset)), calc(100dvh - var(--board-v-inset)), 520px);
+    border-radius: 8px;
+    box-shadow: 0 14px 36px -8px rgba(0,0,0,0.45), 0 4px 12px -3px rgba(0,0,0,0.25);
+  }
+
+  .board-grid-9x9 { gap: 2.5px; }
+
+  .board-cell { border-radius: 4px !important; }
+
+  .board-cell.tile-edge-bottom .tile-header-bar,
+  .board-cell.tile-edge-top .tile-header-bar {
+    width: 100% !important;
+    height: 16px !important;
+    min-height: 14px !important;
+  }
+
+  .board-cell.tile-edge-bottom .tile-footer-bar,
+  .board-cell.tile-edge-top .tile-footer-bar {
+    width: 100% !important;
+    height: 12px !important;
+    min-height: 11px !important;
+  }
+
+  .board-cell.tile-edge-left .tile-header-bar,
+  .board-cell.tile-edge-right .tile-header-bar {
+    width: 13px !important;
+    min-width: 12px !important;
+    height: 100% !important;
+  }
+
+  .board-cell.tile-edge-left .tile-footer-bar,
+  .board-cell.tile-edge-right .tile-footer-bar {
+    width: 11px !important;
+    min-width: 10px !important;
+    height: 100% !important;
+  }
+
+  .tile-header-label { font-size: clamp(5px, 1.1vw, 7px); letter-spacing: -0.3px; }
+
+  .corner-header-label { font-size: clamp(6px, 1.4vw, 8px); }
+  .corner-go-text      { font-size: clamp(10px, 2.5vw, 14px); }
+  .corner-footer-label { font-size: clamp(5.5px, 1.2vw, 7px); }
+
+  .center-scoreboard-timer { padding: 2px 10px; border-radius: 8px; }
+  .scoreboard-digits        { font-size: 12px; letter-spacing: 1.5px; }
+
+  .board-center-diorama { max-width: 80%; }
+
+  .center-action-dock {
+    padding: 5px 10px;
+    gap: 7px;
+    border-radius: 12px;
+  }
+
+  .center-active-player-pill { padding: 2px 7px; font-size: 10px; }
+
+  .announcement-deed-card { width: min(240px, 90%); border-radius: 10px; }
+}
+
+/* 3. Ultra-Compact Phones (400px and below) */
+@media (max-width: 400px) {
+  :root {
+    --board-road-padding: 15px;
+    --board-road-centerline: 7px;
+    --board-h-inset: 12px;
+    --board-v-inset: 130px;
+  }
+
+  .board-grid-9x9 { gap: 2px; }
+  .tile-header-label { font-size: 5.5px; letter-spacing: -0.4px; }
+  .center-action-dock { padding: 4px 8px; gap: 5px; }
+}
+
+/* 4. Landscape / Short Screens (max-height 540px and below) */
+@media (max-height: 540px) {
+  :root {
+    --board-road-padding: 16px;
+    --board-road-centerline: 8px;
+    --board-h-inset: 260px;
+    --board-v-inset: 10px;
+  }
+
+  .board-stage-wrapper { padding: 2px 0; }
+
+  .board-outer-frame {
+    width: min(calc(100dvh - var(--board-v-inset)), calc(100vw - var(--board-h-inset)), 364px);
+    height: min(calc(100dvh - var(--board-v-inset)), calc(100vw - var(--board-h-inset)), 364px);
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    box-shadow: 0 14px 36px -8px rgba(0,0,0,0.45), 0 4px 12px -3px rgba(0,0,0,0.25);
+  }
+
+  .board-grid-9x9 {
+    grid-template-columns: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
+    grid-template-rows: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
+    gap: 2.5px;
+  }
+  .board-cell { border-radius: 4px !important; }
+
+  .board-cell.tile-edge-bottom .tile-header-bar,
+  .board-cell.tile-edge-top .tile-header-bar {
+    width: 100% !important;
+    height: 15px !important;
+    min-height: 14px !important;
+  }
+
+  .board-cell.tile-edge-bottom .tile-footer-bar,
+  .board-cell.tile-edge-top .tile-footer-bar {
+    width: 100% !important;
+    height: 11px !important;
+    min-height: 10px !important;
+  }
+
+  .board-cell.tile-edge-left .tile-header-bar,
+  .board-cell.tile-edge-right .tile-header-bar {
+    width: 13px !important;
+    min-width: 12px !important;
+    height: 100% !important;
+  }
+
+  .board-cell.tile-edge-left .tile-footer-bar,
+  .board-cell.tile-edge-right .tile-footer-bar {
+    width: 11px !important;
+    min-width: 10px !important;
+    height: 100% !important;
+  }
+
+  .tile-header-label {
+    font-size: clamp(4.5px, 0.65vw, 5.8px);
+    letter-spacing: -0.28px;
+    line-height: 1.1;
+  }
+
+  .tile-edge-left .tile-header-label,
+  .tile-edge-right .tile-header-label {
+    white-space: nowrap !important;
+    display: block !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .center-scoreboard-timer { padding: 1.5px 8px; }
+  .scoreboard-digits        { font-size: 10px; }
+  .center-action-dock       { padding: 4px 8px; gap: 5px; }
+
+  /* Authentic Deed Announcement in Center Board — Compact Landscape Fit */
+  .announcement-deed-card {
+    width: min(290px, 94%);
+    max-height: min(270px, 94%);
+    border-radius: 10px;
+  }
+  .announcement-header-band {
+    padding: 5px 10px 4px;
+  }
+  .announcement-header-sub {
+    font-size: 7px;
+    letter-spacing: 0.8px;
+  }
+  .announcement-header-badge {
+    font-size: 6.5px;
+    padding: 1px 5px;
+  }
+  .announcement-card-title {
+    font-size: 13.5px;
+  }
+  .announcement-card-gujarati {
+    font-size: 9px;
+    margin-top: 1px;
+  }
+  .announcement-art-stage {
+    height: 46px;
+    padding: 2px;
+  }
+  .announcement-art-sprite {
+    max-width: 42px;
+    max-height: 42px;
+  }
+  .announcement-card-body {
+    padding: 4px 8px 5px;
+    gap: 3px;
+  }
+  .announcement-player-badge {
+    font-size: 9.5px;
+    gap: 4px;
+  }
+  .announcement-action-tag {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+  .announcement-stat-row {
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .announcement-stat-label {
+    font-size: 9px;
+  }
+  .announcement-stat-value {
+    font-size: 11.5px;
+  }
+  .announcement-narrative {
+    font-size: 9.5px;
+    line-height: 1.2;
+    padding: 0 2px;
+  }
+  .announcement-card-footer {
+    padding: 3px 8px;
+  }
+  .announcement-footer-pill {
+    font-size: 7px;
+  }
+}
+
+/* ==========================================================================
+   DESKTOP ONLY BOARD TYPOGRAPHY (≥ 1024px width & ≥ 600px height)
+   Completely isolated so mobile views (portrait and landscape) are 100% unaffected
+   ========================================================================== */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .board-cell.tile-edge-top .tile-header-bar,
+  .board-cell.tile-edge-bottom .tile-header-bar {
+    height: 19px !important;
+  }
+  .board-cell.tile-edge-top .tile-footer-bar,
+  .board-cell.tile-edge-bottom .tile-footer-bar {
+    height: 15px !important;
+  }
+  .board-cell.tile-edge-left .tile-header-bar,
+  .board-cell.tile-edge-right .tile-header-bar {
+    width: 19px !important;
+  }
+  .board-cell.tile-edge-left .tile-footer-bar,
+  .board-cell.tile-edge-right .tile-footer-bar {
+    width: 15px !important;
+  }
+  .board-cell.tile-edge-top .tile-header-label,
+  .board-cell.tile-edge-bottom .tile-header-label {
+    font-size: 9px !important;
+  }
+  .board-cell.tile-edge-top .tile-footer-price-text,
+  .board-cell.tile-edge-bottom .tile-footer-price-text {
+    font-size: 9.5px !important;
+  }
+  .board-cell.tile-edge-left .tile-header-label,
+  .board-cell.tile-edge-right .tile-header-label {
+    font-size: 8.5px !important;
+  }
+  .board-cell.tile-edge-left .tile-footer-price-text,
+  .board-cell.tile-edge-right .tile-footer-price-text {
+    font-size: 9px !important;
+  }
+  .corner-header-bar {
+    height: 20px !important;
+  }
+  .corner-header-label {
+    font-size: 8.5px !important;
+  }
+  .corner-footer-bar {
+    height: 15px !important;
+  }
+  .corner-footer-label {
+    font-size: 8px !important;
+  }
+}
+
+

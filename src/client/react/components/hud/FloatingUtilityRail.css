@@ -1,0 +1,241 @@
+/* ==========================================================================
+   NAVO VYAPAR — CONNECTED FLOATING UTILITY CONSOLE (RIGHT SIDE)
+   - Left-side Zoom Wing physically attached with ZERO gap
+   - Zoom buttons [+ / -] stacked VERTICALLY
+   - Bigger, comfortable touch sizes for all controls
+   - Smoothly curved corners on all elements
+   ========================================================================== */
+
+.connected-utility-console {
+  position: absolute;
+  right: max(14px, calc(env(safe-area-inset-right) + 10px));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 95;
+  user-select: none;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── 1. LEFT-SIDE CONNECTED ZOOM WING (VERTICAL STACK, ZERO GAP) ── */
+.connected-zoom-wing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border-right: none;
+  margin-right: -1.5px;
+  position: relative;
+  z-index: 1;
+  box-shadow:
+    -6px 8px 20px -2px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+/* Minimized State: Only the single chevron toggle button is shown */
+.connected-zoom-wing.is-minimized {
+  border-radius: 16px 0 0 16px;
+  padding: 10px 4px 10px 6px;
+}
+
+/* Expanded State: Chevron on top + vertical [ + ], [ 1x ], [ − ] */
+.connected-zoom-wing.is-expanded {
+  border-radius: 20px 0 0 20px;
+  padding: 8px 5px 8px 6px;
+  gap: 6px;
+}
+
+/* Single Minimize/Expand Chevron Toggle Icon */
+.zoom-wing-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.12s ease, transform 0.12s ease, background 0.12s ease;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.zoom-wing-toggle-btn:hover {
+  color: #0f172a;
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.connected-zoom-wing.is-minimized .zoom-wing-toggle-btn:hover {
+  transform: translateX(-1px);
+}
+
+.connected-zoom-wing.is-expanded .zoom-wing-toggle-btn:hover {
+  transform: translateX(1px);
+}
+
+/* Vertical Stack of Zoom Buttons inside the wing */
+.zoom-wing-vertical-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.zoom-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(226, 232, 240, 0.9);
+  background: #f8fafc;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+  padding: 0;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.zoom-btn:hover {
+  background: #ffffff;
+  color: #0f172a;
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.zoom-btn:active {
+  transform: scale(0.92);
+}
+
+.zoom-btn.btn-zoom-reset {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 850;
+  height: 20px;
+  width: auto;
+  min-width: 24px;
+  padding: 0 4px;
+  border-radius: 9999px;
+}
+
+.zoom-btn.btn-zoom-reset:hover {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+/* ── 2. VERTICAL ACTION RAIL (PHYSICALLY CONNECTED, PERFECT SIZE) ── */
+.connected-vertical-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(226, 232, 240, 0.95);
+  border-radius: 28px;
+  padding: 8px 6px;
+  position: relative;
+  z-index: 2;
+  box-shadow:
+    0 14px 36px -4px rgba(15, 23, 42, 0.16),
+    0 4px 12px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  box-sizing: border-box;
+  width: 48px;
+}
+
+.rail-btn {
+  position: relative;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid rgba(226, 232, 240, 0.9);
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, color 0.12s ease, border-color 0.12s ease;
+  outline: none;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rail-btn:hover {
+  transform: translateY(-1px) scale(1.08);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+.rail-btn:active {
+  transform: scale(0.92);
+}
+
+/* Accent Hovers */
+.rail-btn.btn-indigo:hover  { color: #4f46e5; border-color: #a5b4fc; }
+.rail-btn.btn-emerald:hover { color: #059669; border-color: #6ee7b7; }
+.rail-btn.is-muted {
+  color: #94a3b8;
+  background: rgba(241, 245, 249, 0.9);
+}
+
+/* Live Notification Badge */
+.rail-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 850;
+  padding: 0.5px 4px;
+  border-radius: 9999px;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(225, 29, 72, 0.35);
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ── Short Screen Adaptations ── */
+@media (max-height: 480px) {
+  .connected-utility-console {
+    right: max(10px, calc(env(safe-area-inset-right) + 8px));
+  }
+
+  .connected-vertical-rail {
+    padding: 6px 5px;
+    width: 44px;
+    gap: 6px;
+  }
+
+  .rail-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .zoom-btn {
+    width: 26px;
+    height: 26px;
+  }
+}

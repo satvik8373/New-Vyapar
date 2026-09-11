@@ -1,0 +1,143 @@
+/* ==========================================================================
+   NAVO VYAPAR — PURE FLOATING TITLE DEED MODAL (NO CONTAINER BOX)
+   Only the 3D physical card floats on screen, with minimal floating top bar
+   ========================================================================== */
+
+.deed-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 20px;
+  box-sizing: border-box;
+  user-select: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  animation: deedOverlayFadeIn 0.2s ease-out;
+}
+
+@keyframes deedOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 1. Floating Top Bar (Minimal Official Pill Above Card) */
+.deed-pure-top-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 12px 6px 8px;
+  box-shadow:
+    0 12px 28px -4px rgba(15, 23, 42, 0.25),
+    0 4px 10px rgba(15, 23, 42, 0.1);
+  margin-bottom: 24px;
+  z-index: 10;
+}
+
+.deed-pure-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.deed-pure-player-title {
+  font-size: 13px;
+  font-weight: 850;
+  color: #0f172a;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.deed-pure-subtitle {
+  font-size: 9.5px;
+  font-weight: 750;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.deed-pure-close-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  transition: all 0.15s ease;
+}
+
+.deed-pure-close-btn:hover {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+/* 2. PURE FLOATING 3D CARD STAGE (ZERO CONTAINER BOX) */
+.deed-pure-card-stage {
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deed-popup-empty {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 16px 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive adjustments for Mobile Landscape / Short Screens (≤ 540px height) */
+@media (max-height: 540px) {
+  .deed-popup-overlay {
+    padding: 6px 12px;
+    justify-content: center;
+  }
+
+  .deed-pure-top-pill {
+    margin-bottom: 6px;
+    padding: 3px 8px 3px 6px;
+    gap: 8px;
+    border-radius: 6px;
+  }
+
+  .deed-pure-player-title {
+    font-size: 11px;
+  }
+
+  .deed-pure-subtitle {
+    font-size: 8.5px;
+  }
+
+  .deed-pure-close-btn {
+    width: 22px;
+    height: 22px;
+  }
+}
