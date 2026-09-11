@@ -47,7 +47,7 @@ interface SessionState {
 
 function readSession(): SessionState | null {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as SessionState;
   } catch {
@@ -57,26 +57,40 @@ function readSession(): SessionState | null {
 
 function writeSession(state: SessionState): void {
   try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(state));
   } catch { /* ignore */ }
 }
 
 function clearSession(): void {
   try {
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
   } catch { /* ignore */ }
 }
 
-/** Resolve the startup screen from session — skip animations for restored sessions */
+/** Resolve the startup screen from persistent session — keep user logged in */
 function resolveInitialScreen(): { screen: AppScreen; userName: string; roomCode: string } {
+  const isLoggedIn = localStorage.getItem('navo_logged_in') === 'true';
+  const savedName = localStorage.getItem('navo_player_name') || 'Trader';
   const saved = readSession();
+
   if (saved) {
-    if (saved.screen === 'SPLASH' || saved.screen === 'ONBOARDING') {
-      return { screen: 'LOGIN', userName: saved.userName, roomCode: saved.roomCode };
+    if (saved.screen === 'GAME' && saved.roomCode) {
+      return { screen: 'GAME', userName: saved.userName || savedName, roomCode: saved.roomCode };
     }
-    return { screen: saved.screen, userName: saved.userName, roomCode: saved.roomCode };
+    if (saved.screen === 'LOBBY' && saved.roomCode) {
+      return { screen: 'LOBBY', userName: saved.userName || savedName, roomCode: saved.roomCode };
+    }
+    if (isLoggedIn) {
+      return { screen: 'MAIN_MENU', userName: saved.userName || savedName, roomCode: '' };
+    }
+    return { screen: saved.screen === 'SPLASH' || saved.screen === 'ONBOARDING' ? 'LOGIN' : saved.screen, userName: saved.userName, roomCode: saved.roomCode };
   }
-  return { screen: 'SPLASH', userName: 'Trader', roomCode: '' };
+
+  if (isLoggedIn) {
+    return { screen: 'MAIN_MENU', userName: savedName, roomCode: '' };
+  }
+
+  return { screen: 'SPLASH', userName: savedName, roomCode: '' };
 }
 
 export const App: React.FC = () => {
@@ -113,6 +127,18 @@ export const App: React.FC = () => {
         if (typeof profile.level === 'number') setUserLevel(profile.level);
         if (profile.rankTitle) setUserRankTitle(profile.rankTitle);
 
+        localStorage.setItem('navo_logged_in', 'true');
+        localStorage.setItem('navo_player_name', profile.name);
+        if (profile.avatar) localStorage.setItem('navo_player_avatar', profile.avatar);
+
+        // Keep logged-in user directly on MAIN_MENU if they were on splash/login
+        setCurrentScreen((prev) => {
+          if (prev === 'SPLASH' || prev === 'ONBOARDING' || prev === 'LOGIN') {
+            return 'MAIN_MENU';
+          }
+          return prev;
+        });
+
         if (unsubUser) unsubUser();
         unsubUser = UserService.getInstance().subscribeUserProfile(profile.uid, (userDoc: UserProfileDoc) => {
           setUserName(userDoc.displayName);
@@ -131,7 +157,7 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Persist screen to sessionStorage whenever it changes
+  // Persist screen to localStorage whenever it changes
   useEffect(() => {
     if (currentScreen !== 'SPLASH' && currentScreen !== 'ONBOARDING') {
       writeSession({ screen: currentScreen, userName, roomCode });
@@ -141,11 +167,10 @@ export const App: React.FC = () => {
   // Re-activate multiplayer adapter when restoring an active game screen on page refresh
   useEffect(() => {
     if (currentScreen === 'GAME' && roomCode) {
-      const profile = AuthService.getInstance().getCurrentProfile();
-      const uid = profile?.uid || 'guest';
-      FirebaseMultiplayerAdapter.activate(roomCode, uid);
+      const uid = AuthService.getInstance().getUid() || 'guest';
+      FirebaseMultiplayerAdapter.activate(roomCode, uid, userName);
     }
-  }, [currentScreen, roomCode]);
+  }, [currentScreen, roomCode, userName]);
 
   // Pure React Board is active - Phaser canvas disabled
   useEffect(() => {
@@ -156,10 +181,26 @@ export const App: React.FC = () => {
   }, [currentScreen]);
 
   // Screen Navigation Handlers
-  const handleSplashDone = () => setCurrentScreen('ONBOARDING');
-  const handleOnboardingDone = () => setCurrentScreen('LOGIN');
+  const handleSplashDone = () => {
+    if (localStorage.getItem('navo_logged_in') === 'true') {
+      setCurrentScreen('MAIN_MENU');
+    } else {
+      setCurrentScreen('ONBOARDING');
+    }
+  };
+
+  const handleOnboardingDone = () => {
+    if (localStorage.getItem('navo_logged_in') === 'true') {
+      setCurrentScreen('MAIN_MENU');
+    } else {
+      setCurrentScreen('LOGIN');
+    }
+  };
+
   const handleLoginDone = (name: string) => {
     setUserName(name);
+    localStorage.setItem('navo_player_name', name);
+    localStorage.setItem('navo_logged_in', 'true');
     setCurrentScreen('MAIN_MENU');
   };
 
@@ -185,15 +226,17 @@ export const App: React.FC = () => {
     setRoomCode(code);
     setUserName(name);
     setUserAvatar(avatar);
+    localStorage.setItem('navo_player_name', name);
+    localStorage.setItem('navo_player_avatar', avatar);
+    localStorage.setItem('navo_logged_in', 'true');
     setCurrentScreen('LOBBY');
   };
 
   const handleStartGame = useCallback(() => {
-    const profile = AuthService.getInstance().getCurrentProfile();
-    const uid = profile?.uid || 'guest';
-    FirebaseMultiplayerAdapter.activate(roomCode, uid);
+    const uid = AuthService.getInstance().getUid() || 'guest';
+    FirebaseMultiplayerAdapter.activate(roomCode, uid, userName);
     setCurrentScreen('GAME');
-  }, [roomCode]);
+  }, [roomCode, userName]);
 
   const handleExitToMenu = () => {
     const profile = AuthService.getInstance().getCurrentProfile();

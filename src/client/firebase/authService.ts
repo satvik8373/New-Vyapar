@@ -35,6 +35,8 @@ export class AuthService {
   private constructor() {
     onAuthStateChanged(auth, async (user: User | null) => {
       if (user) {
+        localStorage.setItem('navo_user_uid', user.uid);
+        localStorage.setItem('navo_logged_in', 'true');
         const savedName = localStorage.getItem(LOCAL_STORAGE_PLAYER_NAME);
         const savedAvatar = localStorage.getItem(LOCAL_STORAGE_AVATAR) || 'crown';
         const name = user.displayName || savedName || `Merchant ${user.uid.slice(0, 4).toUpperCase()}`;
@@ -74,6 +76,24 @@ export class AuthService {
 
   public getCurrentProfile(): PlayerProfile | null {
     return this.currentUserProfile;
+  }
+
+  public getUid(): string {
+    if (this.currentUserProfile?.uid) return this.currentUserProfile.uid;
+    if (auth.currentUser?.uid) return auth.currentUser.uid;
+    const stored = localStorage.getItem('navo_user_uid');
+    if (stored) return stored;
+    const guest = localStorage.getItem('navo_guest_id');
+    if (guest) return guest;
+    return '';
+  }
+
+  public isLoggedIn(): boolean {
+    return Boolean(
+      this.currentUserProfile ||
+      auth.currentUser ||
+      localStorage.getItem('navo_logged_in') === 'true'
+    );
   }
 
   public subscribeAuth(listener: (profile: PlayerProfile | null) => void): () => void {
@@ -229,6 +249,8 @@ export class AuthService {
   }
 
   public async signOut(): Promise<void> {
+    localStorage.removeItem('navo_logged_in');
+    localStorage.removeItem('navo_vyapar_session');
     await signOut(auth);
     this.currentUserProfile = null;
     this.notifyListeners();

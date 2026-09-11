@@ -329,16 +329,24 @@ export class GameEngine {
     }
 
     // 1. Players mapping
+    const localName = localStorage.getItem('navo_player_name') || '';
+    const currentUid = localStorage.getItem('navo_user_uid') || localStorage.getItem('navo_guest_id') || '';
+
     if (gameState.players) {
       const pList = Array.isArray(gameState.players)
         ? gameState.players
         : Object.values(gameState.players || {});
       if (pList.length > 0) {
-        this.state.players = pList.map((p: any) => ({
-          ...p,
-          ownedPropertyIds: Array.isArray(p.ownedPropertyIds) ? p.ownedPropertyIds : [],
-          isHuman: p.id === myUid
-        }));
+        this.state.players = pList.map((p: any) => {
+          const isMe =
+            (p.id && (p.id === myUid || p.id === currentUid)) ||
+            (localName && p.name && p.name.trim().toLowerCase() === localName.trim().toLowerCase());
+          return {
+            ...p,
+            ownedPropertyIds: Array.isArray(p.ownedPropertyIds) ? p.ownedPropertyIds : [],
+            isHuman: Boolean(isMe)
+          };
+        });
       }
     }
 
@@ -357,7 +365,11 @@ export class GameEngine {
       ? gameState.players
       : Object.values(gameState.players || {});
     const activeP = pListForAudio[gameState.activePlayerIndex];
-    const isOpponent = activeP && activeP.id !== myUid;
+    const isOpponent =
+      activeP &&
+      activeP.id !== myUid &&
+      activeP.id !== currentUid &&
+      (!localName || activeP.name?.trim().toLowerCase() !== localName.trim().toLowerCase());
 
     if (isOpponent) {
       const prevDiceRolling = this.state.diceState?.rolling;

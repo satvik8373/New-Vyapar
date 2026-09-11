@@ -1,5 +1,6 @@
 import { MultiplayerAdapter, GameEngine, CHANCE_CARDS } from '../game-engine/GameEngine';
 import { RoomService, SyncGameState } from './roomService';
+import { AuthService } from './authService';
 import { BOARD_TILES, BoardTileStep } from '../../shared/game-data/boardData';
 import { SoundEffects } from '../audio/SoundEffects';
 
@@ -10,24 +11,38 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
   private roomCode: string;
   private myUid: string;
+  private myName: string;
   private unsubscribeRoom: (() => void) | null = null;
   private latestGameState: SyncGameState | null = null;
   private sounds = SoundEffects.getInstance();
 
-  public constructor(roomCode: string, myUid: string) {
+  public constructor(roomCode: string, myUid: string, myName: string = '') {
     this.roomCode = roomCode;
-    this.myUid = myUid;
+    this.myUid = myUid || AuthService.getInstance().getUid();
+    this.myName = myName || localStorage.getItem('navo_player_name') || '';
   }
 
-  public static activate(roomCode: string, myUid: string): FirebaseMultiplayerAdapter {
+  public static activate(roomCode: string, myUid: string, myName: string = ''): FirebaseMultiplayerAdapter {
     if (FirebaseMultiplayerAdapter.instance) {
       FirebaseMultiplayerAdapter.instance.destroy();
     }
-    const adapter = new FirebaseMultiplayerAdapter(roomCode, myUid);
+    const adapter = new FirebaseMultiplayerAdapter(roomCode, myUid, myName);
     adapter.init();
     FirebaseMultiplayerAdapter.instance = adapter;
     GameEngine.getInstance().setMultiplayerAdapter(adapter);
     return adapter;
+  }
+
+  public isLocalPlayer(player: { id?: string; name?: string } | null | undefined): boolean {
+    if (!player) return false;
+    const currentUid = AuthService.getInstance().getUid();
+    if (this.myUid && player.id === this.myUid) return true;
+    if (currentUid && player.id === currentUid) return true;
+    const myStoredName = this.myName || localStorage.getItem('navo_player_name') || '';
+    if (myStoredName && player.name && player.name.trim().toLowerCase() === myStoredName.trim().toLowerCase()) {
+      return true;
+    }
+    return false;
   }
 
   public static getInstance(): FirebaseMultiplayerAdapter | null {
@@ -100,7 +115,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
     const state = this.sanitizeStateForSync(rawState);
     const activePlayer = state.players[state.activePlayerIndex];
-    if (!activePlayer || activePlayer.id !== this.myUid) {
+    if (!activePlayer || !this.isLocalPlayer(activePlayer)) {
       console.warn('[Multiplayer] Cannot roll: not your turn!');
       return;
     }
@@ -320,7 +335,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
     const state = this.sanitizeStateForSync(rawState);
     const activePlayer = state.players[state.activePlayerIndex];
-    if (!activePlayer || activePlayer.id !== this.myUid) return;
+    if (!activePlayer || !this.isLocalPlayer(activePlayer)) return;
 
     const prop = state.selectedProperty;
     if (!prop) return;
@@ -374,7 +389,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
     const state = this.sanitizeStateForSync(rawState);
     const activePlayer = state.players[state.activePlayerIndex];
-    if (!activePlayer || activePlayer.id !== this.myUid) return;
+    if (!activePlayer || !this.isLocalPlayer(activePlayer)) return;
 
     const prop = state.selectedProperty;
     state.logs.unshift({
@@ -402,7 +417,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
     const state = this.sanitizeStateForSync(rawState);
     const activePlayer = state.players[state.activePlayerIndex];
-    if (!activePlayer || activePlayer.id !== this.myUid) return;
+    if (!activePlayer || !this.isLocalPlayer(activePlayer)) return;
 
     let nextIndex = (state.activePlayerIndex + 1) % state.players.length;
     let attempts = 0;
@@ -436,7 +451,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
     const state = this.sanitizeStateForSync(rawState);
     const activePlayer = state.players[state.activePlayerIndex];
-    if (!activePlayer || activePlayer.id !== this.myUid) return;
+    if (!activePlayer || !this.isLocalPlayer(activePlayer)) return;
 
     const fine = 500;
     activePlayer.balance = Math.max(0, activePlayer.balance - fine);
@@ -462,7 +477,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
     const state = this.sanitizeStateForSync(rawState);
     const activePlayer = state.players[state.activePlayerIndex];
-    if (!activePlayer || activePlayer.id !== this.myUid) return;
+    if (!activePlayer || !this.isLocalPlayer(activePlayer)) return;
 
     if (activePlayer.getOutOfJailCards > 0) {
       activePlayer.getOutOfJailCards -= 1;
