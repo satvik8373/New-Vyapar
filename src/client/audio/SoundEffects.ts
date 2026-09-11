@@ -401,4 +401,30 @@ export class SoundEffects {
     osc.start(now);
     osc.stop(now + 0.04);
   }
+
+  /**
+   * Sound effect for opponent player leaving or forfeiting the match
+   */
+  public playPlayerLeft(): void {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(311.13, now); // Eb4
+    osc.frequency.setValueAtTime(233.08, now + 0.18); // Bb3
+
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.5);
+  }
 }

@@ -20,9 +20,11 @@ import { CornerPlayerHUD, HUDPlayerData } from '../components/hud/CornerPlayerHU
 import { FloatingUtilityRail } from '../components/hud/FloatingUtilityRail';
 import { ActivityLogDrawer } from '../components/hud/ActivityLogDrawer';
 import { TitleDeedPopupModal } from '../modals/TitleDeedPopupModal';
+import { OpponentLeftModal } from '../modals/OpponentLeftModal';
 import { VoiceChatService, VoiceChatState } from '../../services/VoiceChatService';
 import { AuthService } from '../../firebase/authService';
 import { NetworkQualityService } from '../../services/NetworkQualityService';
+import { FirebaseMultiplayerAdapter } from '../../firebase/firebaseMultiplayerAdapter';
 
 interface GameScreenProps {
   onExitToMenu: () => void;
@@ -60,6 +62,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
   const [resultOpen, setResultOpen] = useState(false);
   const [deedLedgerOpen, setDeedLedgerOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
+  const [opponentLeftData, setOpponentLeftData] = useState<{
+    open: boolean;
+    name: string;
+    uid: string;
+  }>({ open: false, name: '', uid: '' });
   const boardRef = useRef<BoardDivSheetHandle>(null);
   const [boardScale, setBoardScale] = useState<number>(1);
 
@@ -152,6 +159,26 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
       setNetworkPing(ping);
     });
   }, [networkService]);
+
+  // ── Multiplayer Opponent Abandon / Disconnect Listener ─────────────────────
+  useEffect(() => {
+    const adapter = FirebaseMultiplayerAdapter.getInstance();
+    if (adapter) {
+      adapter.setOnOpponentLeft((event) => {
+        setOpponentLeftData({
+          open: true,
+          name: event.name || 'Opponent',
+          uid: event.uid
+        });
+        bridge.emitToast(`🚪 ${event.name || 'Opponent'} has left the match. You win by forfeit!`, 'warning');
+      });
+
+      adapter.setOnRoomClosed(() => {
+        bridge.emitToast('The game room was closed.', 'info');
+        onExitToMenu();
+      });
+    }
+  }, [bridge, onExitToMenu]);
 
   const handleToggleMic = async () => {
     if (!roomCode) {
@@ -562,8 +589,27 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
         onClose={() => setHelpOpen(false)}
       />
 
+      {/* Official Opponent Left / Forfeit Modal */}
+      <OpponentLeftModal
+        open={opponentLeftData.open}
+        opponentName={opponentLeftData.name}
+        finalBalance={heroPlayer?.balance || 5000}
+        propertiesCount={heroPlayer?.ownedPropertyIds?.length || 0}
+        onClaimVictory={() => {
+          setOpponentLeftData((prev) => ({ ...prev, open: false }));
+          onExitToMenu();
+        }}
+        onContinueWithAI={() => {
+          const opponentUid = opponentLeftData.uid;
+          setOpponentLeftData((prev) => ({ ...prev, open: false }));
+          if (opponentUid) {
+            engine.replaceOpponentWithAI(opponentUid);
+          }
+        }}
+      />
+
       <ResultModal
-        open={resultOpen || Boolean(winner)}
+        open={(resultOpen || Boolean(winner)) && !opponentLeftData.open}
         onPlayAgain={() => {
           setResultOpen(false);
           engine.resetGame(heroPlayer?.name || 'Satvik');

@@ -13,6 +13,10 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
   private myUid: string;
   private myName: string;
   private unsubscribeRoom: (() => void) | null = null;
+  private unsubscribePresence: (() => void) | null = null;
+  private lastHandledAbandonTime: number = 0;
+  private onOpponentLeftCallback?: (event: { uid: string; name: string; reason?: string }) => void;
+  private onRoomClosedCallback?: () => void;
   private latestGameState: SyncGameState | null = null;
   private sounds = SoundEffects.getInstance();
 
@@ -43,16 +47,9 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
   public isLocalPlayer(player: { id?: string; name?: string } | null | undefined): boolean {
     if (!player) return false;
     const currentUid = AuthService.getInstance().getUid();
-    if (this.myUid && player.id) {
-      return player.id === this.myUid;
-    }
-    if (currentUid && player.id) {
-      return player.id === currentUid;
-    }
-    const myStoredName = this.myName || localStorage.getItem('navo_player_name') || '';
-    if (myStoredName && player.name && player.name.trim().toLowerCase() === myStoredName.trim().toLowerCase()) {
-      return true;
-    }
+    if (this.myUid && player.id && player.id === this.myUid) return true;
+    if (currentUid && player.id && player.id === currentUid) return true;
+    if (this.myName && player.name && player.name.trim().toLowerCase() === this.myName.trim().toLowerCase()) return true;
     return false;
   }
 
@@ -63,7 +60,10 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
   private init(): void {
     const roomService = RoomService.getInstance();
 
-    // Immediate initial sync without waiting for socket event
+    // 1. Register presence with auto onDisconnect cleanup
+    this.unsubscribePresence = roomService.registerPresence(this.roomCode, this.myUid, this.myName);
+
+    // 2. Immediate initial sync without waiting for socket event
     roomService.getRoom(this.roomCode).then((roomDoc) => {
       if (roomDoc && roomDoc.gameState) {
         this.latestGameState = roomDoc.gameState;
@@ -71,11 +71,41 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
       }
     });
 
+    // 3. Live WebSocket Realtime Database listener
     this.unsubscribeRoom = roomService.listenRoom(this.roomCode, (roomDoc) => {
-      if (!roomDoc || !roomDoc.gameState) return;
-      this.latestGameState = roomDoc.gameState;
-      GameEngine.getInstance().syncWithFirebase(roomDoc.gameState, this.myUid);
+      if (!roomDoc) {
+        if (this.onRoomClosedCallback) {
+          this.onRoomClosedCallback();
+        }
+        return;
+      }
+
+      // Check for opponent abandon event
+      if (
+        roomDoc.abandonEvent &&
+        roomDoc.abandonEvent.uid !== this.myUid &&
+        roomDoc.abandonEvent.timestamp > this.lastHandledAbandonTime
+      ) {
+        this.lastHandledAbandonTime = roomDoc.abandonEvent.timestamp;
+        GameEngine.getInstance().handleOpponentLeft(roomDoc.abandonEvent.uid, roomDoc.abandonEvent.name);
+        if (this.onOpponentLeftCallback) {
+          this.onOpponentLeftCallback(roomDoc.abandonEvent);
+        }
+      }
+
+      if (roomDoc.gameState) {
+        this.latestGameState = roomDoc.gameState;
+        GameEngine.getInstance().syncWithFirebase(roomDoc.gameState, this.myUid);
+      }
     });
+  }
+
+  public setOnOpponentLeft(cb: (event: { uid: string; name: string; reason?: string }) => void): void {
+    this.onOpponentLeftCallback = cb;
+  }
+
+  public setOnRoomClosed(cb: () => void): void {
+    this.onRoomClosedCallback = cb;
   }
 
   public isMultiplayerActive(): boolean {
@@ -84,10 +114,16 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
   public destroy(): void {
     this.sounds.stopCarMoving();
+    if (this.unsubscribePresence) {
+      this.unsubscribePresence();
+      this.unsubscribePresence = null;
+    }
     if (this.unsubscribeRoom) {
       this.unsubscribeRoom();
       this.unsubscribeRoom = null;
     }
+    this.onOpponentLeftCallback = undefined;
+    this.onRoomClosedCallback = undefined;
     GameEngine.getInstance().setMultiplayerAdapter(null);
     FirebaseMultiplayerAdapter.instance = null;
   }

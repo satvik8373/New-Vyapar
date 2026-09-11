@@ -5,6 +5,7 @@ import {
   update,
   remove,
   onValue,
+  onDisconnect,
   serverTimestamp,
   Unsubscribe
 } from 'firebase/database';
@@ -70,6 +71,15 @@ export interface SyncGameState {
     timestamp: number;
   }[];
   selectedProperty?: any;
+  winner?: string | null;
+}
+
+export interface RoomAbandonEvent {
+  type: 'PLAYER_LEFT' | 'PLAYER_DISCONNECTED';
+  uid: string;
+  name: string;
+  timestamp: number;
+  reason?: string;
 }
 
 export interface RoomDoc {
@@ -83,6 +93,7 @@ export interface RoomDoc {
   updatedAt: any;
   players: RoomPlayer[];
   gameState: SyncGameState | null;
+  abandonEvent?: RoomAbandonEvent | null;
 }
 
 export const PLAYER_SLOT_COLORS = [
@@ -526,7 +537,12 @@ export class RoomService {
       const playersList: RoomPlayer[] = Array.isArray(room.players)
         ? (room.players as RoomPlayer[])
         : (Object.values(room.players || {}) as RoomPlayer[]);
+      const leavingPlayer = playersList.find((p) => p.uid === uid);
       const remaining: RoomPlayer[] = playersList.filter((p) => p.uid !== uid);
+
+      // Clean up player presence entry
+      const presenceRef = ref(rtdb, `rooms/${cleanCode}/presence/${uid}`);
+      await remove(presenceRef).catch(() => {});
 
       if (remaining.length === 0 || (room.hostUid === uid && room.status === 'LOBBY')) {
         await remove(roomRef).catch(() => {});
@@ -535,18 +551,71 @@ export class RoomService {
       } else {
         const newHostUid = room.hostUid === uid ? remaining[0].uid : room.hostUid;
         const newHostName = room.hostUid === uid ? remaining[0].name : room.hostName;
-        await update(roomRef, {
+
+        let abandonEvent: RoomAbandonEvent | null = null;
+        let updatedGameState: SyncGameState | null = room.gameState || null;
+
+        if (room.status === 'PLAYING') {
+          const leavingName = leavingPlayer ? leavingPlayer.name : 'Opponent';
+          abandonEvent = {
+            type: 'PLAYER_LEFT',
+            uid,
+            name: leavingName,
+            timestamp: Date.now(),
+            reason: 'FORFEIT'
+          };
+
+          if (updatedGameState && Array.isArray(updatedGameState.players)) {
+            const updatedPlayers = updatedGameState.players.map((p) =>
+              p.id === uid
+                ? { ...p, isBankrupt: true, balance: 0, ownedPropertyIds: [] }
+                : p
+            );
+            const activeRemaining = updatedPlayers.filter((p) => !p.isBankrupt);
+
+            updatedGameState = {
+              ...updatedGameState,
+              players: updatedPlayers,
+              winner: activeRemaining.length === 1 ? activeRemaining[0].id : updatedGameState.winner || null,
+              phase: activeRemaining.length === 1 ? 'GAME_OVER' : updatedGameState.phase,
+              logs: [
+                ...(updatedGameState.logs || []),
+                {
+                  id: 'log_' + Date.now(),
+                  text: `🚪 ${leavingName} has left the match.`,
+                  type: 'info',
+                  timestamp: Date.now()
+                }
+              ]
+            };
+          }
+        }
+
+        const updatePayload: Record<string, any> = {
           players: remaining,
           hostUid: newHostUid,
           hostName: newHostName,
+          status: room.status === 'PLAYING' && remaining.length <= 1 ? 'ENDED' : room.status,
           updatedAt: serverTimestamp()
-        }).catch(() => {});
+        };
+
+        if (abandonEvent) {
+          updatePayload.abandonEvent = abandonEvent;
+        }
+        if (updatedGameState) {
+          updatePayload.gameState = updatedGameState;
+        }
+
+        await update(roomRef, updatePayload).catch(() => {});
 
         const updated: RoomDoc = {
           ...room,
           players: remaining,
           hostUid: newHostUid,
           hostName: newHostName,
+          status: updatePayload.status,
+          abandonEvent: abandonEvent || room.abandonEvent || null,
+          gameState: updatedGameState,
           updatedAt: Date.now()
         };
         localRoomsStore.set(cleanCode, updated);
@@ -559,5 +628,60 @@ export class RoomService {
     } catch (e) {
       console.warn('[RoomService] Error leaving room:', e);
     }
+  }
+
+  /**
+   * Register player online presence in room with onDisconnect automatic cleanup
+   */
+  public registerPresence(roomCode: string, uid: string, name: string): () => void {
+    const cleanCode = roomCode.trim().toUpperCase();
+    const presenceRef = ref(rtdb, `rooms/${cleanCode}/presence/${uid}`);
+    const connectedRef = ref(rtdb, '.info/connected');
+
+    let unsubConnected: Unsubscribe | null = null;
+    try {
+      unsubConnected = onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+          onDisconnect(presenceRef)
+            .update({
+              online: false,
+              disconnectedAt: serverTimestamp(),
+              name
+            })
+            .catch(() => {});
+
+          set(presenceRef, {
+            online: true,
+            name,
+            connectedAt: serverTimestamp()
+          }).catch(() => {});
+        }
+      });
+    } catch (e) {
+      console.warn('[RoomService] Error registering presence:', e);
+    }
+
+    return () => {
+      if (unsubConnected) unsubConnected();
+      remove(presenceRef).catch(() => {});
+    };
+  }
+
+  /**
+   * Listen to presence of all players in a room
+   */
+  public listenPresence(
+    roomCode: string,
+    callback: (presenceMap: Record<string, { online: boolean; name?: string; disconnectedAt?: any }>) => void
+  ): () => void {
+    const cleanCode = roomCode.trim().toUpperCase();
+    const presencesRef = ref(rtdb, `rooms/${cleanCode}/presence`);
+    return onValue(presencesRef, (snap) => {
+      if (snap.exists()) {
+        callback(snap.val() || {});
+      } else {
+        callback({});
+      }
+    });
   }
 }

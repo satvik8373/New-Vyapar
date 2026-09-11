@@ -1885,6 +1885,78 @@ export class GameEngine {
     }
   }
 
+  /**
+   * Handle when an opponent forfeits or leaves the multiplayer match
+   */
+  public handleOpponentLeft(leavingPlayerId: string, leavingPlayerName: string): void {
+    const player = this.state.players.find((p) => p.id === leavingPlayerId || p.name === leavingPlayerName);
+    const displayName = player ? player.name : leavingPlayerName;
+
+    // Mark player as bankrupt & return properties to bank
+    const debtorProperties = player?.ownedPropertyIds || [];
+    this.state.players = this.state.players.map((p) =>
+      p.id === leavingPlayerId || p.name === leavingPlayerName
+        ? { ...p, isBankrupt: true, balance: 0, ownedPropertyIds: [] }
+        : p
+    );
+
+    // Clean up property ownership
+    if (debtorProperties.length > 0) {
+      const newHouses = { ...this.state.propertyHouses };
+      debtorProperties.forEach((s) => delete newHouses[s]);
+      this.state.propertyHouses = newHouses;
+    }
+
+    this.addLog(`🚪 ${displayName} has left the match.`, 'info');
+
+    // If remaining active players is 1, remaining player wins!
+    const active = this.state.players.filter((p) => !p.isBankrupt);
+    if (active.length === 1) {
+      this.state.winner = active[0].id;
+      this.state.phase = 'GAME_OVER';
+      SoundEffects.getInstance().playPurchaseJingle();
+      this.addLog(`🏆 ${active[0].name} wins by forfeit!`, 'info');
+    } else {
+      // If it was the leaving player's turn, advance to next player
+      const activeP = this.getActivePlayer();
+      if (activeP && (activeP.id === leavingPlayerId || activeP.name === leavingPlayerName)) {
+        this.endTurn();
+      }
+    }
+    this.emit();
+  }
+
+  /**
+   * Replace an opponent who left with an intelligent AI bot so player can continue playing
+   */
+  public replaceOpponentWithAI(opponentId: string): void {
+    const opponent = this.state.players.find((p) => p.id === opponentId || p.isBankrupt);
+    if (!opponent) return;
+
+    this.state.players = this.state.players.map((p) => {
+      if (p.id === opponent.id) {
+        return {
+          ...p,
+          isHuman: false,
+          isBankrupt: false,
+          name: p.name.includes('(AI)') ? p.name : `${p.name} (AI)`,
+          avatar: 'bot'
+        };
+      }
+      return p;
+    });
+
+    this.setMultiplayerAdapter(null);
+    this.state.phase = 'PLAYER_TURN';
+    this.addLog(`🤖 ${opponent.name} replaced by AI. Game resumed!`, 'buy');
+    this.emit();
+
+    const current = this.getActivePlayer();
+    if (!current.isHuman) {
+      this.triggerBotTurn();
+    }
+  }
+
   // ── TURN MANAGEMENT ──────────────────────────────────────────────────────────
 
   public endTurn(): void {
