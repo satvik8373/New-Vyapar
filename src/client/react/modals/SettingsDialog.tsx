@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -8,13 +8,16 @@ import {
   Box,
   Switch,
   FormControlLabel,
-  Select,
-  MenuItem,
   Divider,
   DialogContentText
 } from '@mui/material';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { CandyButton } from '../components/common/CandyButton';
-import { usePWAInstall } from '../utils/usePWAInstall';
+import { SoundEffects } from '../../audio/SoundEffects';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -31,12 +34,19 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   onLeaveGame,
   onLogout
 }) => {
-  const { canInstall, isInstalled, installApp } = usePWAInstall();
-  const [sound, setSound] = useState(true);
-  const [music, setMusic] = useState(true);
-  const [vibration, setVibration] = useState(true);
-  const [graphics, setGraphics] = useState('High');
+  const [sound, setSound] = useState(() => !SoundEffects.getInstance().getIsMuted());
   const [confirmLeave, setConfirmLeave] = useState(false);
+
+  useEffect(() => {
+    return SoundEffects.getInstance().subscribe((isMuted) => {
+      setSound(!isMuted);
+    });
+  }, []);
+
+  const handleToggleSound = (enabled: boolean) => {
+    setSound(enabled);
+    SoundEffects.getInstance().setMuted(!enabled);
+  };
 
   return (
     <>
@@ -68,76 +78,44 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           Game Settings
         </DialogTitle>
 
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-          <FormControlLabel
-            control={<Switch checked={sound} onChange={(e) => setSound(e.target.checked)} color="primary" />}
-            label={<Typography sx={{ color: '#0f172a', fontWeight: 700, fontSize: '13px' }}>Sound Effects</Typography>}
-            sx={{ justifyContent: 'space-between', ml: 0 }}
-          />
-
-          <FormControlLabel
-            control={<Switch checked={music} onChange={(e) => setMusic(e.target.checked)} color="primary" />}
-            label={<Typography sx={{ color: '#0f172a', fontWeight: 700, fontSize: '13px' }}>Background Music</Typography>}
-            sx={{ justifyContent: 'space-between', ml: 0 }}
-          />
-
-          <FormControlLabel
-            control={<Switch checked={vibration} onChange={(e) => setVibration(e.target.checked)} color="primary" />}
-            label={<Typography sx={{ color: '#0f172a', fontWeight: 700, fontSize: '13px' }}>Haptic Vibration</Typography>}
-            sx={{ justifyContent: 'space-between', ml: 0 }}
-          />
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-            <Typography sx={{ color: '#0f172a', fontWeight: 700, fontSize: '13px' }}>Graphics Quality</Typography>
-            <Select
-              size="small"
-              value={graphics}
-              onChange={(e) => setGraphics(e.target.value)}
-              sx={{
-                background: '#f8fafc',
-                borderRadius: '12px',
-                color: '#0f172a',
-                fontWeight: 700,
-                fontSize: '12px',
-                height: 36,
-                '& fieldset': { borderColor: 'rgba(203, 213, 225, 0.8)' }
-              }}
-            >
-              <MenuItem value="High">High (60 FPS)</MenuItem>
-              <MenuItem value="Medium">Medium</MenuItem>
-              <MenuItem value="Low">Battery Saver</MenuItem>
-            </Select>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {/* Audio Sound Effects */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 1.2,
+              borderRadius: '12px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              {sound ? (
+                <VolumeUpIcon sx={{ color: '#059669', fontSize: 22 }} />
+              ) : (
+                <VolumeOffIcon sx={{ color: '#94a3b8', fontSize: 22 }} />
+              )}
+              <Box>
+                <Typography sx={{ color: '#0f172a', fontWeight: 800, fontSize: '13px' }}>
+                  Game Audio & Sound
+                </Typography>
+                <Typography sx={{ color: '#64748b', fontSize: '11px', fontWeight: 600 }}>
+                  {sound ? 'Dice rolls, cars & board effects active' : 'All sounds muted'}
+                </Typography>
+              </Box>
+            </Box>
+            <Switch
+              checked={sound}
+              onChange={(e) => handleToggleSound(e.target.checked)}
+              color="primary"
+            />
           </Box>
 
-          {canInstall && (
-            <CandyButton
-              fullWidth
-              variant="mint"
-              size="sm"
-              onClick={async () => {
-                await installApp();
-              }}
-            >
-              📲 Install App (Fullscreen)
-            </CandyButton>
-          )}
+          <Divider sx={{ my: 0.5 }} />
 
-          {isInstalled && (
-            <Box sx={{ textAlign: 'center', py: 0.4 }}>
-              <Typography sx={{ fontSize: '11.5px', color: '#10b981', fontWeight: 800 }}>
-                ✓ App Installed (Fullscreen Enabled)
-              </Typography>
-            </Box>
-          )}
-
-          {!isInstalled && !canInstall && typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
-            <Box sx={{ p: 1, backgroundColor: '#f1f5f9', borderRadius: '10px', textAlign: 'center' }}>
-              <Typography sx={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
-                📲 To install on iOS: Tap <strong>Share</strong> ➔ <strong>'Add to Home Screen'</strong>
-              </Typography>
-            </Box>
-          )}
-
+          {/* Help & Rules */}
           <CandyButton
             fullWidth
             variant="glass"
@@ -147,18 +125,22 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               onOpenHelp();
             }}
           >
+            <MenuBookIcon sx={{ fontSize: 16, mr: 0.8 }} />
             Help & Rules Guide
           </CandyButton>
 
+          {/* Leave Match */}
           <CandyButton
             fullWidth
             variant="danger"
             size="sm"
             onClick={() => setConfirmLeave(true)}
           >
+            <ExitToAppIcon sx={{ fontSize: 16, mr: 0.8 }} />
             Leave Match
           </CandyButton>
 
+          {/* Optional Logout */}
           {onLogout && (
             <CandyButton
               fullWidth
@@ -169,6 +151,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 onLogout();
               }}
             >
+              <LogoutIcon sx={{ fontSize: 16, mr: 0.8 }} />
               Log Out
             </CandyButton>
           )}

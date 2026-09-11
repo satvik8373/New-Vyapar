@@ -6,7 +6,8 @@
 export class SoundEffects {
   private static instance: SoundEffects;
   private ctx: AudioContext | null = null;
-  private isMuted: boolean = false;
+  private isMuted: boolean = typeof window !== 'undefined' ? localStorage.getItem('navo_audio_muted') === 'true' : false;
+  private listeners: Set<(isMuted: boolean) => void> = new Set();
 
   private audioBuffers: Map<string, AudioBuffer> = new Map();
   private isPreloading: boolean = false;
@@ -84,7 +85,10 @@ export class SoundEffects {
    * Minimal, gentle, and realistic — no repetitive beeps or multiple loud bursts.
    */
   public startCarMoving(): void {
-    if (this.isMuted) return;
+    if (this.isMuted) {
+      this.stopCarMoving();
+      return;
+    }
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -143,8 +147,31 @@ export class SoundEffects {
     // Kept silent so the smooth continuous startCarMoving() purr plays undisturbed
   }
 
+  public subscribe(cb: (isMuted: boolean) => void): () => void {
+    this.listeners.add(cb);
+    cb(this.isMuted);
+    return () => this.listeners.delete(cb);
+  }
+
+  public setMuted(muted: boolean): void {
+    this.isMuted = muted;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('navo_audio_muted', String(muted));
+      } catch {}
+    }
+    if (this.isMuted) {
+      this.stopCarMoving();
+    }
+    this.listeners.forEach((cb) => {
+      try {
+        cb(this.isMuted);
+      } catch {}
+    });
+  }
+
   public toggleMute(): boolean {
-    this.isMuted = !this.isMuted;
+    this.setMuted(!this.isMuted);
     return this.isMuted;
   }
 

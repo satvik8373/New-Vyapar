@@ -2,21 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import { SoundEffects } from '../../../audio/SoundEffects';
 import './Realistic3DDice.css';
 
-/**
- * Standard face layout (opposite faces sum to 7):
- *   Face 1 Front  vs Face 6 Back
- *   Face 2 Right  vs Face 5 Left
- *   Face 3 Top    vs Face 4 Bottom
- *
- * To SHOW face N on the viewer side, apply the counter-rotation:
- */
+
 const FACE_ROTATIONS: Record<number, { x: number; y: number }> = {
-  1: { x: 0,    y: 0   },
-  2: { x: 0,    y: -90 },
-  3: { x: -90,  y: 0   },
-  4: { x: 90,   y: 0   },
-  5: { x: 0,    y: 90  },
-  6: { x: 0,    y: 180 },
+  1: { x: 0, y: 0 },
+  2: { x: 0, y: -90 },
+  3: { x: -90, y: 0 },
+  4: { x: 90, y: 0 },
+  5: { x: 0, y: 90 },
+  6: { x: 0, y: 180 },
 };
 
 interface Realistic3DDiceProps {
@@ -34,9 +27,9 @@ export const Realistic3DDice: React.FC<Realistic3DDiceProps> = ({
   onClick,
   canRoll = true,
 }) => {
-  const soundEffects   = SoundEffects.getInstance();
-  const prevRolling    = useRef(false);
-  const accumRef       = useRef({ x: 0, y: 0 });
+  const soundEffects = SoundEffects.getInstance();
+  const prevRolling = useRef(false);
+  const accumRef = useRef({ x: 0, y: 0 });
 
   const halfSize = Math.round(size / 2);
 
@@ -45,8 +38,8 @@ export const Realistic3DDice: React.FC<Realistic3DDiceProps> = ({
   useEffect(() => {
     if (isRolling && !prevRolling.current) {
       soundEffects.playDiceRoll();
-      accumRef.current.x += 720;
-      accumRef.current.y += 1080;
+      accumRef.current.x += 360;
+      accumRef.current.y += 360;
     } else if (!isRolling && prevRolling.current) {
       soundEffects.playDiceLand();
     }
@@ -54,7 +47,7 @@ export const Realistic3DDice: React.FC<Realistic3DDiceProps> = ({
   }, [isRolling, soundEffects]);
 
   const targetFace = value && value >= 1 && value <= 6 ? value : 1;
-  const baseRot    = FACE_ROTATIONS[targetFace];
+  const baseRot = FACE_ROTATIONS[targetFace];
 
   // Settled rotation: add accumulated full rotations so the cube
   // doesn't snap back to zero between rolls.

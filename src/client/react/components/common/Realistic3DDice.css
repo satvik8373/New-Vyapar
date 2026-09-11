@@ -71,24 +71,36 @@
   width: var(--dice-size, 52px);
   height: var(--dice-size, 52px);
   transform-style: preserve-3d;
-  /* Smooth, slightly bouncy landing transition */
-  transition: transform 0.8s cubic-bezier(0.22, 0.92, 0.28, 1.05);
+  /* Natural tactile landing settle */
+  transition: transform 0.6s cubic-bezier(0.25, 1.15, 0.35, 1);
   z-index: 2;
 }
 
-/* Override transition when rolling — CSS animation controls it */
+/* Realistic board game tumble: subtle physical hop, natural roll, rhythmic bounce */
 .dice-cube.is-rolling {
-  animation: diceTumble 1.1s linear infinite;
+  animation: diceTumble 0.8s cubic-bezier(0.4, 0.05, 0.25, 1) infinite;
   transition: none;
 }
 
 @keyframes diceTumble {
-  0%   { transform: rotateX(0deg)   rotateY(0deg)   rotateZ(0deg); }
-  20%  { transform: rotateX(200deg) rotateY(160deg) rotateZ(30deg); }
-  40%  { transform: rotateX(430deg) rotateY(350deg) rotateZ(80deg); }
-  60%  { transform: rotateX(600deg) rotateY(530deg) rotateZ(150deg); }
-  80%  { transform: rotateX(800deg) rotateY(720deg) rotateZ(240deg); }
-  100% { transform: rotateX(1080deg) rotateY(900deg) rotateZ(360deg); }
+  0% {
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  }
+  20% {
+    transform: translateY(-16px) rotateX(75deg) rotateY(60deg) rotateZ(-12deg);
+  }
+  40% {
+    transform: translateY(-6px) rotateX(160deg) rotateY(140deg) rotateZ(10deg);
+  }
+  60% {
+    transform: translateY(-18px) rotateX(250deg) rotateY(230deg) rotateZ(-8deg);
+  }
+  80% {
+    transform: translateY(-8px) rotateX(320deg) rotateY(310deg) rotateZ(8deg);
+  }
+  100% {
+    transform: translateY(0px) rotateX(360deg) rotateY(360deg) rotateZ(0deg);
+  }
 }
 
 /* ── DICE FACE BASE STYLES ───────────────────────────────────────────────── */

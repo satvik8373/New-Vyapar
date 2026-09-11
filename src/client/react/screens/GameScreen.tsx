@@ -25,6 +25,7 @@ import { VoiceChatService, VoiceChatState } from '../../services/VoiceChatServic
 import { AuthService } from '../../firebase/authService';
 import { NetworkQualityService } from '../../services/NetworkQualityService';
 import { FirebaseMultiplayerAdapter } from '../../firebase/firebaseMultiplayerAdapter';
+import { SoundEffects } from '../../audio/SoundEffects';
 
 interface GameScreenProps {
   onExitToMenu: () => void;
@@ -38,7 +39,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
   const networkService = NetworkQualityService.getInstance();
 
   const [engineState, setEngineState] = useState<GameEngineState>(engine.getState());
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState<boolean>(() => SoundEffects.getInstance().getIsMuted());
   const [voiceState, setVoiceState] = useState<VoiceChatState>(voiceService.getState());
   const [networkPing, setNetworkPing] = useState<number>(() => networkService.getPing());
 
@@ -159,6 +160,19 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
       setNetworkPing(ping);
     });
   }, [networkService]);
+
+  // ── Sound Effects Mute Sync Listener ──────────────────────────────────────
+  useEffect(() => {
+    return SoundEffects.getInstance().subscribe((muted) => {
+      setIsMuted(muted);
+    });
+  }, []);
+
+  const handleToggleMute = () => {
+    const newMuted = SoundEffects.getInstance().toggleMute();
+    setIsMuted(newMuted);
+    bridge.emitToast(newMuted ? '🔇 Audio Muted' : '🔊 Audio Unmuted', 'info');
+  };
 
   // ── Multiplayer Opponent Abandon / Disconnect Listener ─────────────────────
   useEffect(() => {
@@ -457,7 +471,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           ==================================================================== */}
       <FloatingUtilityRail
         isMuted={isMuted}
-        onToggleMute={() => setIsMuted(!isMuted)}
+        onToggleMute={handleToggleMute}
         isMicActive={voiceState.isInVoice}
         isMicMuted={voiceState.isMuted}
         isSpeaking={voiceState.isSpeaking}
