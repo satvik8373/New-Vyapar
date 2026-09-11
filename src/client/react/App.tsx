@@ -27,6 +27,7 @@ import { GameEngine, AIDifficulty } from '../game-engine/GameEngine';
 import { VoiceChatService } from '../services/VoiceChatService';
 import { SoundEffects } from '../audio/SoundEffects';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { FriendService } from '../firebase/friendService';
 
 // ── Screen navigation type ────────────────────────────────────────────────
 export type AppScreen =
@@ -139,6 +140,9 @@ export const App: React.FC = () => {
         localStorage.setItem('navo_player_name', profile.name);
         if (profile.avatar) localStorage.setItem('navo_player_avatar', profile.avatar);
         if (profile.uid) localStorage.setItem('navo_user_uid', profile.uid);
+
+        // Track online presence in RTDB
+        FriendService.getInstance().setupPresence(profile.uid);
 
         // Keep logged-in user directly on MAIN_MENU if they were on splash/login
         setCurrentScreen((prev) => {

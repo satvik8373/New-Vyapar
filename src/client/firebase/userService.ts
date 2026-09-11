@@ -27,6 +27,7 @@ export interface UserProfileDoc {
   gamesWon: number;
   totalEarnings: number;
   propertiesBought: number;
+  friends?: string[]; // Array of friend UIDs
   createdAt: any;
   lastLoginAt: any;
 }

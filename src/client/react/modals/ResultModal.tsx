@@ -17,6 +17,7 @@ import { AppBadge } from '../components/common/AppBadge';
 import { PlayerData } from '../../../shared/types/player';
 import { UserService } from '../../firebase/userService';
 import { AuthService } from '../../firebase/authService';
+import { FriendService } from '../../firebase/friendService';
 
 interface ResultModalProps {
   open: boolean;
@@ -55,6 +56,16 @@ export const ResultModal: React.FC<ResultModalProps> = ({
           won: isHumanWinner,
           finalBalance: humanPlayer?.balance || 5000,
           propertiesCount: humanPlayer?.ownedPropertyIds?.length || 0
+        });
+
+        // Record each opponent from this match as a recent opponent
+        const opponents = allPlayers.filter((p) => !p.isHuman && p.id && p.id !== currentProfile.uid);
+        opponents.forEach((opp) => {
+          FriendService.getInstance().recordRecentOpponent(currentProfile.uid, {
+            uid: opp.id || opp.name,
+            displayName: opp.name || 'Opponent',
+            avatar: opp.avatar || 'crown'
+          });
         });
       }
     }
