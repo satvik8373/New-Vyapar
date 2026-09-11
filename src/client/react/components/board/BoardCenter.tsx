@@ -58,6 +58,44 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
     !isHopping &&
     isHumanTurn;
 
+  // Turn Countdown Timer (30s to roll, 15s to resolve/act)
+  const [secondsLeft, setSecondsLeft] = useState<number>(30);
+
+  useEffect(() => {
+    if (diceState.rolling || isHopping) {
+      return;
+    }
+    const initialDuration = phase === 'TILE_ACTION' || phase === 'RESOLVING' ? 15 : 30;
+    setSecondsLeft(initialDuration);
+
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activePlayerIndex, phase, diceState.rolling, isHopping]);
+
+  // When timer hits 0: auto-execute so game never hangs
+  useEffect(() => {
+    if (secondsLeft === 0 && !diceState.rolling && !isHopping) {
+      if (isHumanTurn) {
+        if (canRoll) {
+          engine.requestRoll();
+        } else if (phase === 'TILE_ACTION') {
+          engine.passProperty();
+        } else if (canEndTurn) {
+          engine.endTurn();
+        }
+      }
+    }
+  }, [secondsLeft, isHumanTurn, canRoll, canEndTurn, phase, diceState.rolling, isHopping, engine]);
+
   const handleRollClick = () => {
     if (canRoll) {
       engine.requestRoll();
@@ -120,7 +158,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
             onClick={handleRollClick}
           >
             <CasinoIcon sx={{ fontSize: isDesktop ? 18 : 15 }} />
-            <span>Roll</span>
+            <span>Roll ({secondsLeft}s)</span>
           </button>
         )}
 
@@ -133,7 +171,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
               onClick={handleRollClick}
             >
               <CasinoIcon sx={{ fontSize: 14 }} />
-              <span>Roll Doubles</span>
+              <span>Roll Doubles ({secondsLeft}s)</span>
             </button>
             <button
               type="button"
@@ -163,7 +201,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
             className="board-center-action-btn btn-end-turn"
             onClick={handleEndTurnClick}
           >
-            <span>End Turn</span>
+            <span>End Turn ({secondsLeft}s)</span>
             <SkipNextIcon sx={{ fontSize: isDesktop ? 18 : 15 }} />
           </button>
         )}
@@ -197,7 +235,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
                 boxShadow: `0 0 8px ${activePlayer.tokenColor}`
               }}
             />
-            <span>{activePlayer.name}'s Turn</span>
+            <span>{activePlayer.name}'s Turn ({secondsLeft}s)</span>
           </div>
         )}
       </div>

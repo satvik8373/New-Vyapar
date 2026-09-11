@@ -5,6 +5,7 @@ export interface OfficialCarTokenProps {
   size?: number;
   isActive?: boolean;
   playerName?: string;
+  playerColor?: string;
   edge?: string; // 'bottom' | 'top' | 'left' | 'right' | 'corner'
   step?: number;
 }
@@ -329,10 +330,19 @@ export const OfficialCarToken: React.FC<OfficialCarTokenProps> = ({
   size = 26,
   isActive = false,
   playerName,
+  playerColor,
   edge = 'bottom',
   step
 }) => {
-  const theme = PLAYER_COLOR_THEMES[playerIndex % 4];
+  const baseTheme = PLAYER_COLOR_THEMES[playerIndex % 4] || PLAYER_COLOR_THEMES[0];
+  const theme = playerColor
+    ? {
+        ...baseTheme,
+        main: playerColor,
+        dark: playerColor,
+        badgeBg: playerColor
+      }
+    : baseTheme;
   const vehicleTransform = getVehicleTransform(edge, step);
   const uid = `p${playerIndex}-${edge}-${step ?? 'x'}`;
 

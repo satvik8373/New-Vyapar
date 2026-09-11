@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { PlayerData } from '@shared/types/player';
 import { OfficialCarToken, PLAYER_COLOR_THEMES } from './OfficialCarToken';
+import { GameEngine } from '../../../game-engine/GameEngine';
 
 interface BoardPlayerTokensProps {
   players: PlayerData[];
@@ -16,6 +17,29 @@ interface BoardPlayerTokensProps {
  * regardless of where or how they appear in a tile list.
  */
 function getPlayerIdentityIndex(player: PlayerData): number {
+  try {
+    const all = GameEngine.getInstance().getState().players;
+    if (all && all.length > 0) {
+      const idx = all.findIndex((ap: any) => ap.id === player.id);
+      if (idx !== -1) return idx % 4;
+    }
+  } catch {
+    // fallback
+  }
+  if (player.tokenColor) {
+    const c = String(player.tokenColor).toLowerCase();
+    if (c.includes('e11d48') || c.includes('dc2626') || c.includes('red') || c.includes('crimson')) return 0;
+    if (c.includes('059669') || c.includes('16a34a') || c.includes('green') || c.includes('emerald')) return 1;
+    if (c.includes('0284c7') || c.includes('2563eb') || c.includes('blue') || c.includes('sapphire')) return 2;
+    if (c.includes('d97706') || c.includes('amber') || c.includes('gold')) return 3;
+  }
+  if (player.colorName) {
+    const n = player.colorName.toLowerCase();
+    if (n.includes('ruby') || n.includes('crimson') || n.includes('red')) return 0;
+    if (n.includes('emerald') || n.includes('green')) return 1;
+    if (n.includes('sapphire') || n.includes('blue')) return 2;
+    if (n.includes('amber') || n.includes('gold')) return 3;
+  }
   if (player.id === 'p1') return 0;
   if (player.id === 'p2') return 1;
   if (player.id === 'p3') return 2;
@@ -95,6 +119,7 @@ export const BoardPlayerTokens: React.FC<BoardPlayerTokensProps> = ({
               size={tokenSize}
               isActive={isActive}
               playerName={p.name}
+              playerColor={p.tokenColor}
               edge={edge}
               step={step}
             />

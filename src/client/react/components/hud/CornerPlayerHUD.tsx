@@ -39,11 +39,11 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
 }) => {
   const engine = GameEngine.getInstance();
   const [showOpponentPopover, setShowOpponentPopover] = useState(false);
-  const [turnTimerSeconds, setTurnTimerSeconds] = useState(45);
+  const [turnTimerSeconds, setTurnTimerSeconds] = useState(30);
 
   useEffect(() => {
     if (isActiveTurn) {
-      setTurnTimerSeconds(45);
+      setTurnTimerSeconds(30);
       const timer = setInterval(() => {
         setTurnTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
       }, 1000);
