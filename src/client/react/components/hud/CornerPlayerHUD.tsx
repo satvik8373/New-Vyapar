@@ -11,6 +11,8 @@ import LockIcon from '@mui/icons-material/Lock';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import CloseIcon from '@mui/icons-material/Close';
 import StyleIcon from '@mui/icons-material/Style';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 import './CornerPlayerHUD.css';
 
 export interface HUDPlayerData extends PlayerData {
@@ -26,6 +28,9 @@ interface CornerPlayerHUDProps {
   lastAcquiredStep?: number;
   onTrade?: (player: HUDPlayerData) => void;
   onOpenDeedPopup?: (player: HUDPlayerData) => void;
+  isSpeaking?: boolean;
+  isMicMuted?: boolean;
+  isInVoice?: boolean;
 }
 
 export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
@@ -35,7 +40,10 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
   isHeroPlayer = false,
   lastAcquiredStep,
   onTrade,
-  onOpenDeedPopup
+  onOpenDeedPopup,
+  isSpeaking = false,
+  isMicMuted = false,
+  isInVoice = false
 }) => {
   const engine = GameEngine.getInstance();
   const [showOpponentPopover, setShowOpponentPopover] = useState(false);
@@ -145,7 +153,7 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
         } as React.CSSProperties}
       >
         {/* Solid Swatch Portrait Avatar */}
-        <div className="hud-avatar-wrapper">
+        <div className={`hud-avatar-wrapper ${isSpeaking ? 'is-speaking' : ''}`}>
           <PlayerAvatar
             avatar={player.avatar}
             name={player.name}
@@ -153,6 +161,18 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
             size={28}
             isActiveTurn={false}
           />
+          {isInVoice && (
+            <span
+              className={`hud-voice-badge ${isSpeaking ? 'speaking' : isMicMuted ? 'muted' : 'active'}`}
+              title={isSpeaking ? `${player.name} is speaking` : isMicMuted ? 'Microphone Muted' : 'Live Voice Connected'}
+            >
+              {isMicMuted ? (
+                <MicOffIcon sx={{ fontSize: 9 }} />
+              ) : (
+                <MicIcon sx={{ fontSize: 9 }} />
+              )}
+            </span>
+          )}
           {isInJail && !isBankrupt && (
             <span className="hud-jail-badge" title="In Jail">
               <LockIcon sx={{ fontSize: 9 }} />

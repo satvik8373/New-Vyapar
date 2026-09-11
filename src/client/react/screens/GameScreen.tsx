@@ -20,17 +20,22 @@ import { CornerPlayerHUD, HUDPlayerData } from '../components/hud/CornerPlayerHU
 import { FloatingUtilityRail } from '../components/hud/FloatingUtilityRail';
 import { ActivityLogDrawer } from '../components/hud/ActivityLogDrawer';
 import { TitleDeedPopupModal } from '../modals/TitleDeedPopupModal';
+import { VoiceChatService, VoiceChatState } from '../../services/VoiceChatService';
+import { AuthService } from '../../firebase/authService';
 
 interface GameScreenProps {
   onExitToMenu: () => void;
+  roomCode?: string;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
+export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }) => {
   const engine = GameEngine.getInstance();
   const bridge = GameBridge.getInstance();
+  const voiceService = VoiceChatService.getInstance();
 
   const [engineState, setEngineState] = useState<GameEngineState>(engine.getState());
   const [isMuted, setIsMuted] = useState(false);
+  const [voiceState, setVoiceState] = useState<VoiceChatState>(voiceService.getState());
 
   const {
     players,
@@ -115,6 +120,56 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
   }, [engine]);
 
   const heroPlayer = players.find((p) => p.isHuman) || players[0];
+
+  // ── Live Voice Chat Lifecycle ───────────────────────────────────────────
+  useEffect(() => {
+    const profile = AuthService.getInstance().getCurrentProfile();
+    const myUid = profile?.uid || heroPlayer?.id || 'player-1';
+    const myName = profile?.name || heroPlayer?.name || 'Player';
+
+    if (roomCode) {
+      voiceService.initRoom(roomCode, myUid, myName);
+    }
+
+    const unsub = voiceService.subscribe((state) => {
+      setVoiceState(state);
+      if (state.error) {
+        bridge.emitToast(state.error, 'error');
+      }
+    });
+
+    return () => {
+      unsub();
+    };
+  }, [roomCode, heroPlayer?.id, heroPlayer?.name]);
+
+  const handleToggleMic = async () => {
+    if (!roomCode) {
+      bridge.emitToast(
+        'Live Mic is active during multiplayer matches. Create or join a room to talk live!',
+        'info'
+      );
+      return;
+    }
+
+    const wasInVoice = voiceState.isInVoice;
+    const wasMuted = voiceState.isMuted;
+
+    const success = await voiceService.toggleMic();
+    if (!wasInVoice && success) {
+      bridge.emitToast(
+        '🎙️ Live Voice Chat connected! Speak freely with players.',
+        'success'
+      );
+    } else if (wasInVoice) {
+      if (wasMuted) {
+        bridge.emitToast('🎙️ Microphone unmuted.', 'info');
+      } else {
+        bridge.emitToast('🔇 Microphone muted.', 'info');
+      }
+    }
+  };
+
   const winnerPlayer = winner ? players.find((p) => p.id === winner || p.name === winner) : null;
   const activePlayer = players[activePlayerIndex];
   const isHumanTurn = activePlayer?.isHuman ?? true;
@@ -260,6 +315,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
           position="top-left"
           isActiveTurn={activePlayer?.id === pTopLeft.id}
           onTrade={() => setTradeOpen(true)}
+          isInVoice={Boolean(voiceState.peers[pTopLeft.id])}
+          isMicMuted={voiceState.peers[pTopLeft.id]?.isMuted}
+          isSpeaking={voiceState.peers[pTopLeft.id]?.isSpeaking}
         />
       )}
 
@@ -270,6 +328,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
           position="top-right"
           isActiveTurn={activePlayer?.id === pTopRight.id}
           onTrade={() => setTradeOpen(true)}
+          isInVoice={Boolean(voiceState.peers[pTopRight.id])}
+          isMicMuted={voiceState.peers[pTopRight.id]?.isMuted}
+          isSpeaking={voiceState.peers[pTopRight.id]?.isSpeaking}
         />
       )}
 
@@ -280,6 +341,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
           position="bottom-left"
           isActiveTurn={activePlayer?.id === pBottomLeft.id}
           onTrade={() => setTradeOpen(true)}
+          isInVoice={Boolean(voiceState.peers[pBottomLeft.id])}
+          isMicMuted={voiceState.peers[pBottomLeft.id]?.isMuted}
+          isSpeaking={voiceState.peers[pBottomLeft.id]?.isSpeaking}
         />
       )}
 
@@ -292,6 +356,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
           isHeroPlayer={true}
           lastAcquiredStep={lastAcquiredStep}
           onOpenDeedPopup={(p) => setViewingDeedPlayer(p)}
+          isInVoice={voiceState.isInVoice}
+          isMicMuted={voiceState.isMuted}
+          isSpeaking={voiceState.isSpeaking}
         />
       )}
 
@@ -336,6 +403,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu }) => {
       <FloatingUtilityRail
         isMuted={isMuted}
         onToggleMute={() => setIsMuted(!isMuted)}
+        isMicActive={voiceState.isInVoice}
+        isMicMuted={voiceState.isMuted}
+        isSpeaking={voiceState.isSpeaking}
+        onToggleMic={handleToggleMic}
         onZoomIn={() => boardRef.current?.zoomIn()}
         onZoomOut={() => boardRef.current?.zoomOut()}
         onResetZoom={() => boardRef.current?.resetZoom()}

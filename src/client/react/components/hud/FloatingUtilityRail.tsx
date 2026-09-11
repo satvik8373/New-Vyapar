@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
@@ -12,6 +14,10 @@ import './FloatingUtilityRail.css';
 interface FloatingUtilityRailProps {
   isMuted: boolean;
   onToggleMute: () => void;
+  isMicActive?: boolean;
+  isMicMuted?: boolean;
+  isSpeaking?: boolean;
+  onToggleMic?: () => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onResetZoom?: () => void;
@@ -27,6 +33,10 @@ interface FloatingUtilityRailProps {
 export const FloatingUtilityRail: React.FC<FloatingUtilityRailProps> = ({
   isMuted,
   onToggleMute,
+  isMicActive = false,
+  isMicMuted = false,
+  isSpeaking = false,
+  onToggleMic,
   onZoomIn,
   onZoomOut,
   onResetZoom,
@@ -115,7 +125,37 @@ export const FloatingUtilityRail: React.FC<FloatingUtilityRailProps> = ({
           {isMuted ? <VolumeOffIcon sx={{ fontSize: 19 }} /> : <VolumeUpIcon sx={{ fontSize: 19 }} />}
         </button>
 
-        {/* 2. Propose Trade */}
+        {/* 2. Live Voice Mic Button */}
+        {onToggleMic && (
+          <button
+            type="button"
+            className={`rail-btn btn-mic ${
+              !isMicActive
+                ? 'is-mic-off'
+                : isMicMuted
+                ? 'is-mic-muted'
+                : 'is-mic-live'
+            } ${isSpeaking ? 'is-speaking' : ''}`}
+            onClick={onToggleMic}
+            title={
+              !isMicActive
+                ? 'Turn On Live Mic'
+                : isMicMuted
+                ? 'Unmute Mic (Currently Muted)'
+                : 'Mute Mic (Live Voice Active)'
+            }
+            aria-label="Live Microphone"
+          >
+            {isMicActive && !isMicMuted ? (
+              <MicIcon sx={{ fontSize: 19 }} />
+            ) : (
+              <MicOffIcon sx={{ fontSize: 19 }} />
+            )}
+            {isSpeaking && <span className="mic-speaking-dot" />}
+          </button>
+        )}
+
+        {/* 3. Propose Trade */}
         <button
           className="rail-btn btn-indigo"
           onClick={onOpenTrade}

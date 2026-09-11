@@ -71,6 +71,57 @@
   border: 1px solid #ffffff;
 }
 
+/* Voice Chat & Speaking State Indicators */
+.hud-avatar-wrapper.is-speaking {
+  animation: hud-avatar-speaking-glow 1s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes hud-avatar-speaking-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6), 0 0 8px rgba(16, 185, 129, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2), 0 0 14px rgba(16, 185, 129, 0.7);
+  }
+}
+
+.hud-voice-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #ffffff;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  transition: all 0.2s ease;
+}
+
+.hud-voice-badge.active {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.hud-voice-badge.speaking {
+  background: #10b981;
+  color: #ffffff;
+  animation: hud-speaking-pulse 0.8s infinite alternate;
+}
+
+@keyframes hud-speaking-pulse {
+  from { transform: scale(0.9); box-shadow: 0 0 2px #10b981; }
+  to { transform: scale(1.2); box-shadow: 0 0 8px #10b981; }
+}
+
+.hud-voice-badge.muted {
+  background: #f43f5e;
+  color: #ffffff;
+}
+
 /* Text Stack: Name + Wealth */
 .hud-text-stack {
   display: flex;

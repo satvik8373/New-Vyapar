@@ -24,6 +24,7 @@ import { RoomService } from '../firebase/roomService';
 import { FirebaseMultiplayerAdapter } from '../firebase/firebaseMultiplayerAdapter';
 import { UserService, UserProfileDoc } from '../firebase/userService';
 import { GameEngine, AIDifficulty } from '../game-engine/GameEngine';
+import { VoiceChatService } from '../services/VoiceChatService';
 
 // ── Screen navigation type ────────────────────────────────────────────────
 export type AppScreen =
@@ -245,6 +246,7 @@ export const App: React.FC = () => {
       RoomService.getInstance().leaveRoom(roomCode, profile.uid);
     }
     FirebaseMultiplayerAdapter.getInstance()?.destroy();
+    VoiceChatService.getInstance().destroy();
     GameEngine.getInstance().setMultiplayerAdapter(null);
 
     // Clear game session — back to menu is intentional navigation
@@ -261,6 +263,7 @@ export const App: React.FC = () => {
         RoomService.getInstance().leaveRoom(roomCode, profile.uid);
       }
       FirebaseMultiplayerAdapter.getInstance()?.destroy();
+      VoiceChatService.getInstance().destroy();
       GameEngine.getInstance().setMultiplayerAdapter(null);
       await AuthService.getInstance().signOut();
     } catch (err) {
@@ -408,7 +411,7 @@ export const App: React.FC = () => {
               transition={{ duration: 0.3 }}
               style={{ width: '100%', height: '100%' }}
             >
-              <GameScreen onExitToMenu={handleExitToMenu} />
+              <GameScreen onExitToMenu={handleExitToMenu} roomCode={roomCode} />
             </motion.div>
           )}
         </AnimatePresence>
