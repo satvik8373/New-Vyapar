@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -38,10 +38,12 @@ export const ResultModal: React.FC<ResultModalProps> = ({
   allPlayers = []
 }) => {
   const hasRecordedRef = useRef(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     if (!open) {
       hasRecordedRef.current = false;
+      setIsDismissed(false);
       return;
     }
 
@@ -58,15 +60,27 @@ export const ResultModal: React.FC<ResultModalProps> = ({
     }
   }, [open, isHumanWinner, humanPlayer]);
 
+  const handlePlayAgainClick = () => {
+    setIsDismissed(true);
+    onPlayAgain();
+  };
+
+  const handleBackToHomeClick = () => {
+    setIsDismissed(true);
+    onBackToHome();
+  };
+
   // Sort players by netWorth descending
   const sortedPlayers = [...allPlayers].sort((a, b) => (b.netWorth ?? b.balance) - (a.netWorth ?? a.balance));
 
   const xpEarned = isHumanWinner ? 350 : 120;
   const coinsEarned = isHumanWinner ? 2500 : 500;
 
+  if (isDismissed) return null;
+
   return (
     <Dialog
-      open={open}
+      open={open && !isDismissed}
       maxWidth="xs"
       fullWidth
       PaperProps={{
@@ -238,7 +252,7 @@ export const ResultModal: React.FC<ResultModalProps> = ({
             fullWidth
             variant="primary"
             size="medium"
-            onClick={onPlayAgain}
+            onClick={handlePlayAgainClick}
           >
             Play Again
           </AppButton>
@@ -247,7 +261,7 @@ export const ResultModal: React.FC<ResultModalProps> = ({
             fullWidth
             variant="outlined"
             size="medium"
-            onClick={onBackToHome}
+            onClick={handleBackToHomeClick}
           >
             Main Menu
           </AppButton>

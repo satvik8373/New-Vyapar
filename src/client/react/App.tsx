@@ -25,6 +25,8 @@ import { FirebaseMultiplayerAdapter } from '../firebase/firebaseMultiplayerAdapt
 import { UserService, UserProfileDoc } from '../firebase/userService';
 import { GameEngine, AIDifficulty } from '../game-engine/GameEngine';
 import { VoiceChatService } from '../services/VoiceChatService';
+import { SoundEffects } from '../audio/SoundEffects';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // ── Screen navigation type ────────────────────────────────────────────────
 export type AppScreen =
@@ -74,9 +76,14 @@ function resolveInitialScreen(): { screen: AppScreen; userName: string; roomCode
   const savedName = localStorage.getItem('navo_player_name') || 'Trader';
   const saved = readSession();
 
+  // CRITICAL: Never auto-restore to GAME screen on page refresh.
+  // A refreshed GAME screen has no live multiplayer connection, causing white screens.
+  // Always redirect to MAIN_MENU if the user was in-game.
   if (saved) {
-    if (saved.screen === 'GAME' && saved.roomCode) {
-      return { screen: 'GAME', userName: saved.userName || savedName, roomCode: saved.roomCode };
+    if (saved.screen === 'GAME') {
+      // Clear stale game session — can't safely restore mid-game on refresh
+      clearSession();
+      return { screen: 'MAIN_MENU', userName: saved.userName || savedName, roomCode: '' };
     }
     if (saved.screen === 'LOBBY' && saved.roomCode) {
       return { screen: 'LOBBY', userName: saved.userName || savedName, roomCode: saved.roomCode };
@@ -167,6 +174,8 @@ export const App: React.FC = () => {
   }, [currentScreen, userName, roomCode]);
 
   // Re-activate multiplayer adapter when restoring an active game screen on page refresh
+  // NOTE: We no longer auto-restore GAME screens on refresh, so this only fires
+  // when navigating into GAME from LOBBY within the same session (not refresh).
   useEffect(() => {
     if (currentScreen === 'GAME' && roomCode) {
       const uid = AuthService.getInstance().getUid() || 'guest';
@@ -241,15 +250,22 @@ export const App: React.FC = () => {
   }, [roomCode, userName]);
 
   const handleExitToMenu = () => {
+    // 1. Stop all audio immediately
+    try { SoundEffects.getInstance().stopCarMoving(); } catch {}
+
+    // 2. Leave room and tear down multiplayer adapter cleanly
     const profile = AuthService.getInstance().getCurrentProfile();
     if (profile && roomCode) {
-      RoomService.getInstance().leaveRoom(roomCode, profile.uid);
+      RoomService.getInstance().leaveRoom(roomCode, profile.uid).catch(() => {});
     }
     FirebaseMultiplayerAdapter.getInstance()?.destroy();
     VoiceChatService.getInstance().destroy();
     GameEngine.getInstance().setMultiplayerAdapter(null);
 
-    // Clear game session — back to menu is intentional navigation
+    // 3. Reset GameEngine to a clean slate so there's nothing stale in memory
+    GameEngine.getInstance().resetGame(userName || 'Player');
+
+    // 4. Clear session and navigate — write MAIN_MENU immediately so refresh is safe
     clearSession();
     writeSession({ screen: 'MAIN_MENU', userName, roomCode: '' });
     setRoomCode('');
@@ -411,7 +427,9 @@ export const App: React.FC = () => {
               transition={{ duration: 0.3 }}
               style={{ width: '100%', height: '100%' }}
             >
-              <GameScreen onExitToMenu={handleExitToMenu} roomCode={roomCode} />
+              <ErrorBoundary fallbackScreen={handleExitToMenu}>
+                <GameScreen onExitToMenu={handleExitToMenu} roomCode={roomCode} />
+              </ErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>
