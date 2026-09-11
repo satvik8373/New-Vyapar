@@ -166,7 +166,7 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
             avatar={player.avatar}
             name={player.name}
             color={colorHex}
-            size={24}
+            size={28}
             isActiveTurn={false}
           />
           {isInJail && !isBankrupt && (
@@ -176,152 +176,158 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
           )}
         </div>
 
-        {/* 2. Player Identity (Name + Role + Voice Indicator) */}
-        <div className="hud-identity-group">
-          <span className="hud-player-name" title={player.name}>
-            {player.name.replace(/\s*\(AI\)/i, '').trim()}
-          </span>
-          {isInVoice && (
-            <span
-              className={`hud-voice-indicator ${isSpeaking ? 'speaking' : isMicMuted ? 'muted' : 'connected'}`}
-              title={isSpeaking ? `${player.name} is speaking` : isMicMuted ? 'Microphone Muted' : 'Voice Connected'}
-            >
-              {isMicMuted ? (
-                <MicOffIcon sx={{ fontSize: 11 }} />
-              ) : isSpeaking ? (
-                <span className="voice-bars" aria-label="Speaking">
-                  <span className="v-bar" />
-                  <span className="v-bar" />
-                  <span className="v-bar" />
+        {/* 2. Balanced 2-Row Stack (Top: Identity + Timer | Bottom: Wealth + Actions + Network) */}
+        <div className="hud-content-stack">
+          {/* Top Row: Name + Voice + YOU/AI Role + Turn Timer */}
+          <div className="hud-top-row">
+            <div className="hud-identity-group">
+              <span className="hud-player-name" title={player.name}>
+                {player.name.replace(/\s*\(AI\)/i, '').trim()}
+              </span>
+              {isInVoice && (
+                <span
+                  className={`hud-voice-indicator ${isSpeaking ? 'speaking' : isMicMuted ? 'muted' : 'connected'}`}
+                  title={isSpeaking ? `${player.name} is speaking` : isMicMuted ? 'Microphone Muted' : 'Voice Connected'}
+                >
+                  {isMicMuted ? (
+                    <MicOffIcon sx={{ fontSize: 11 }} />
+                  ) : isSpeaking ? (
+                    <span className="voice-bars" aria-label="Speaking">
+                      <span className="v-bar" />
+                      <span className="v-bar" />
+                      <span className="v-bar" />
+                    </span>
+                  ) : (
+                    <MicIcon sx={{ fontSize: 11 }} />
+                  )}
                 </span>
-              ) : (
-                <MicIcon sx={{ fontSize: 11 }} />
               )}
-            </span>
-          )}
-          {isHeroPlayer && <span className="hud-role-tag">YOU</span>}
-          {!player.isHuman && !engine.getMultiplayerAdapter()?.isMultiplayerActive() && (player.avatar === 'bot' || player.name.includes('(AI)')) && (
-            <span className="hud-role-tag ai">AI</span>
-          )}
-        </div>
-
-        <span className="hud-oneline-divider" />
-
-        {/* 3. Wealth (Cash Balance) */}
-        <div className="hud-wealth-group">
-          <CurrencyCoin size={12} />
-          <span className="hud-balance-val">
-            {player.balance !== undefined ? player.balance.toLocaleString() : '0'}
-          </span>
-        </div>
-
-        {/* 4. Action Buttons (Deeds, Trade, Mute) */}
-        <div className="hud-actions-group">
-          {/* Property Deeds Count Button */}
-          <Tooltip
-            arrow
-            title={
-              ownedTiles.length > 0
-                ? isHeroPlayer
-                  ? `${ownedTiles.length} title deeds • Click to view floating cards`
-                  : `${ownedTiles.length} properties • Click to view strategic intelligence & trade`
-                : 'No properties acquired yet'
-            }
-          >
-            <button
-              type="button"
-              className={`hud-card-icon-btn ${ownedTiles.length === 0 ? 'is-empty' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (ownedTiles.length > 0) {
-                  if (isHeroPlayer && onOpenDeedPopup) {
-                    onOpenDeedPopup(player);
-                  } else {
-                    setShowOpponentPopover(!showOpponentPopover);
-                  }
-                }
-              }}
-            >
-              <StyleIcon sx={{ fontSize: 11 }} />
-              {ownedTiles.length > 0 && (
-                <span className="hud-card-badge">{ownedTiles.length}</span>
+              {isHeroPlayer && <span className="hud-role-tag">YOU</span>}
+              {!player.isHuman && !engine.getMultiplayerAdapter()?.isMultiplayerActive() && (player.avatar === 'bot' || player.name.includes('(AI)')) && (
+                <span className="hud-role-tag ai">AI</span>
               )}
-            </button>
-          </Tooltip>
+            </div>
 
-          {/* Quick Trade Button for opponents */}
-          {!isHeroPlayer && !isBankrupt && onTrade && (
-            <Tooltip arrow title={`Trade with ${player.name}`}>
-              <button
-                type="button"
-                className="hud-action-btn trade-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTrade(player);
-                }}
-              >
-                <HandshakeIcon sx={{ fontSize: 11 }} />
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Manual Mute / Unmute Opponent Voice Button */}
-          {!isHeroPlayer && !isBankrupt && onToggleMutePeer && (
-            <Tooltip
-              arrow
-              title={
-                isPeerMutedLocally
-                  ? `Unmute ${player.name}'s voice`
-                  : `Mute ${player.name}'s voice`
-              }
-            >
-              <button
-                type="button"
-                className={`hud-action-btn mute-btn ${isPeerMutedLocally ? 'is-muted' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleMutePeer(player.id);
-                }}
-                aria-label={isPeerMutedLocally ? `Unmute ${player.name}` : `Mute ${player.name}`}
-              >
-                {isPeerMutedLocally ? (
-                  <VolumeOffIcon sx={{ fontSize: 11, color: '#ef4444' }} />
-                ) : (
-                  <VolumeUpIcon sx={{ fontSize: 11 }} />
-                )}
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Bankrupt Indicator */}
-          {isBankrupt && (
-            <span className="hud-bankrupt-tag">BANKRUPT</span>
-          )}
-        </div>
-
-        {/* 5. Real Network Signal Lines (NO DOT, Clean 3-Bar Cellular Signal Lines) */}
-        {typeof pingMs === 'number' && pingMs > 0 && (
-          <div
-            className={`hud-network-signal signal-${
-              pingMs < 60 ? 'good' : pingMs < 130 ? 'fair' : 'poor'
-            }`}
-            title={`Network Ping: ${pingMs} ms`}
-          >
-            <span className="signal-bars" aria-label="Network Signal">
-              <span className="sig-bar bar-1" />
-              <span className="sig-bar bar-2" />
-              <span className="sig-bar bar-3" />
-            </span>
-            <span className="ping-num">{pingMs}ms</span>
+            {/* Active Turn Timer Countdown */}
+            {isActiveTurn && (
+              <span className="hud-turn-timer" title="Turn time remaining">
+                {turnTimerSeconds}s
+              </span>
+            )}
           </div>
-        )}
 
-        {/* 6. Active Turn Timer */}
-        {isActiveTurn && (
-          <span className="hud-turn-timer" title="Turn time remaining">
-            {turnTimerSeconds}s
-          </span>
-        )}
+          {/* Bottom Row: Cash Balance + Property Deeds + Trade + Mute + Network Signal Lines */}
+          <div className="hud-bottom-row">
+            {/* Wealth (Cash Balance) */}
+            <div className="hud-wealth-group">
+              <CurrencyCoin size={11} />
+              <span className="hud-balance-val">
+                {player.balance !== undefined ? player.balance.toLocaleString() : '0'}
+              </span>
+            </div>
+
+            {/* Actions & Connectivity */}
+            <div className="hud-actions-group">
+              {/* Property Deeds Count Button */}
+              <Tooltip
+                arrow
+                title={
+                  ownedTiles.length > 0
+                    ? isHeroPlayer
+                      ? `${ownedTiles.length} title deeds • Click to view floating cards`
+                      : `${ownedTiles.length} properties • Click to view strategic intelligence & trade`
+                    : 'No properties acquired yet'
+                }
+              >
+                <button
+                  type="button"
+                  className={`hud-card-icon-btn ${ownedTiles.length === 0 ? 'is-empty' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (ownedTiles.length > 0) {
+                      if (isHeroPlayer && onOpenDeedPopup) {
+                        onOpenDeedPopup(player);
+                      } else {
+                        setShowOpponentPopover(!showOpponentPopover);
+                      }
+                    }
+                  }}
+                >
+                  <StyleIcon sx={{ fontSize: 10 }} />
+                  {ownedTiles.length > 0 && (
+                    <span className="hud-card-badge">{ownedTiles.length}</span>
+                  )}
+                </button>
+              </Tooltip>
+
+              {/* Quick Trade Button for opponents */}
+              {!isHeroPlayer && !isBankrupt && onTrade && (
+                <Tooltip arrow title={`Trade with ${player.name}`}>
+                  <button
+                    type="button"
+                    className="hud-action-btn trade-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTrade(player);
+                    }}
+                  >
+                    <HandshakeIcon sx={{ fontSize: 10 }} />
+                  </button>
+                </Tooltip>
+              )}
+
+              {/* Manual Mute / Unmute Opponent Voice Button */}
+              {!isHeroPlayer && !isBankrupt && onToggleMutePeer && (
+                <Tooltip
+                  arrow
+                  title={
+                    isPeerMutedLocally
+                      ? `Unmute ${player.name}'s voice`
+                      : `Mute ${player.name}'s voice`
+                  }
+                >
+                  <button
+                    type="button"
+                    className={`hud-action-btn mute-btn ${isPeerMutedLocally ? 'is-muted' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleMutePeer(player.id);
+                    }}
+                    aria-label={isPeerMutedLocally ? `Unmute ${player.name}` : `Mute ${player.name}`}
+                  >
+                    {isPeerMutedLocally ? (
+                      <VolumeOffIcon sx={{ fontSize: 10, color: '#ef4444' }} />
+                    ) : (
+                      <VolumeUpIcon sx={{ fontSize: 10 }} />
+                    )}
+                  </button>
+                </Tooltip>
+              )}
+
+              {/* Bankrupt Indicator */}
+              {isBankrupt && (
+                <span className="hud-bankrupt-tag">BANKRUPT</span>
+              )}
+
+              {/* Real Network Signal Lines (Ascending Cellular Signal Bars — NO DOT) */}
+              {typeof pingMs === 'number' && pingMs > 0 && (
+                <div
+                  className={`hud-network-signal signal-${
+                    pingMs < 60 ? 'good' : pingMs < 130 ? 'fair' : 'poor'
+                  }`}
+                  title={`Network Ping: ${pingMs} ms`}
+                >
+                  <span className="signal-bars" aria-label="Network Signal">
+                    <span className="sig-bar bar-1" />
+                    <span className="sig-bar bar-2" />
+                    <span className="sig-bar bar-3" />
+                  </span>
+                  <span className="ping-num">{pingMs}ms</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ====================================================================
