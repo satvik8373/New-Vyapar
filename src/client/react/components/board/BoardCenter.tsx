@@ -105,7 +105,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
       <div className="center-actions-simple">
         {/* The 3D Dice directly on tabletop */}
         <Realistic3DDice
-          size={isDesktop ? 38 : 26}
+          size={isDesktop ? 44 : 36}
           value={diceState.value}
           isRolling={diceState.rolling}
           canRoll={canRoll}
@@ -116,7 +116,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
         {canRoll && !isInJail && (
           <button
             type="button"
-            className="board-center-action-btn btn-roll"
+            className="board-center-action-btn btn-roll pulse-roll"
             onClick={handleRollClick}
           >
             <CasinoIcon sx={{ fontSize: isDesktop ? 18 : 15 }} />

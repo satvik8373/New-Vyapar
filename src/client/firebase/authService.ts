@@ -83,9 +83,12 @@ export class AuthService {
     if (auth.currentUser?.uid) return auth.currentUser.uid;
     const stored = localStorage.getItem('navo_user_uid');
     if (stored) return stored;
-    const guest = localStorage.getItem('navo_guest_id');
-    if (guest) return guest;
-    return '';
+    let guest = localStorage.getItem('navo_guest_id');
+    if (!guest) {
+      guest = 'g_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+      localStorage.setItem('navo_guest_id', guest);
+    }
+    return guest;
   }
 
   public isLoggedIn(): boolean {
@@ -152,6 +155,9 @@ export class AuthService {
         avatar
       );
 
+      localStorage.setItem('navo_user_uid', uid);
+      localStorage.setItem('navo_logged_in', 'true');
+
       this.currentUserProfile = {
         uid,
         name: userDoc.displayName || playerName,
@@ -170,6 +176,8 @@ export class AuthService {
       console.error('Failed to sign in as guest, creating local session:', err);
       const fallbackUid = localStorage.getItem('navo_guest_id') || 'guest_' + Date.now();
       localStorage.setItem('navo_guest_id', fallbackUid);
+      localStorage.setItem('navo_user_uid', fallbackUid);
+      localStorage.setItem('navo_logged_in', 'true');
       this.currentUserProfile = {
         uid: fallbackUid,
         name: playerName,

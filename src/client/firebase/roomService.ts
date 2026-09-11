@@ -113,6 +113,20 @@ export function sanitizeGameState(gameState: any): SyncGameState | null {
   }
   return {
     ...gameState,
+    hoppingState: gameState.hoppingState ? {
+      playerId: gameState.hoppingState.playerId,
+      fromIndex: gameState.hoppingState.fromIndex,
+      toIndex: gameState.hoppingState.toIndex,
+      stepIndex: gameState.hoppingState.stepIndex,
+      currentStep: gameState.hoppingState.currentStep ?? gameState.hoppingState.toIndex ?? 0,
+      targetStep: gameState.hoppingState.targetStep ?? gameState.hoppingState.toIndex ?? 0,
+      isJailJump: Boolean(gameState.hoppingState.isJailJump)
+    } : null,
+    selectedProperty: gameState.selectedProperty || null,
+    diceState: {
+      rolling: Boolean(gameState.diceState?.rolling),
+      value: typeof gameState.diceState?.value === 'number' ? gameState.diceState.value : null
+    },
     players: playersList.map((p: any) => ({
       ...p,
       ownedPropertyIds: Array.isArray(p.ownedPropertyIds) ? p.ownedPropertyIds : []
@@ -471,7 +485,7 @@ export class RoomService {
     if (!cleanState) return;
 
     try {
-      await update(ref(rtdb, `rooms/${cleanCode}/gameState`), cleanState);
+      await set(ref(rtdb, `rooms/${cleanCode}/gameState`), cleanState);
       await update(ref(rtdb, `rooms/${cleanCode}`), { updatedAt: serverTimestamp() });
     } catch (e) {
       console.warn('[RoomService] RTDB syncGameState failed, updating locally:', e);

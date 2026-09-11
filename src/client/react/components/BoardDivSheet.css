@@ -900,6 +900,22 @@
   border-color: rgba(255, 255, 255, 0.28);
 }
 
+.board-center-action-btn.btn-roll.pulse-roll {
+  animation: rollPulseAnim 1.6s infinite ease-in-out;
+}
+
+@keyframes rollPulseAnim {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6), 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(239, 68, 68, 0), 0 6px 16px rgba(0, 0, 0, 0.32);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+}
+
 .board-center-action-btn.btn-end-turn {
   background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
   color: #ffffff;

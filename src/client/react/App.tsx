@@ -130,6 +130,7 @@ export const App: React.FC = () => {
         localStorage.setItem('navo_logged_in', 'true');
         localStorage.setItem('navo_player_name', profile.name);
         if (profile.avatar) localStorage.setItem('navo_player_avatar', profile.avatar);
+        if (profile.uid) localStorage.setItem('navo_user_uid', profile.uid);
 
         // Keep logged-in user directly on MAIN_MENU if they were on splash/login
         setCurrentScreen((prev) => {

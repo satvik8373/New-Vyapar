@@ -23,6 +23,13 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
   }
 
   public static activate(roomCode: string, myUid: string, myName: string = ''): FirebaseMultiplayerAdapter {
+    if (
+      FirebaseMultiplayerAdapter.instance &&
+      FirebaseMultiplayerAdapter.instance.roomCode === roomCode &&
+      FirebaseMultiplayerAdapter.instance.myUid === myUid
+    ) {
+      return FirebaseMultiplayerAdapter.instance;
+    }
     if (FirebaseMultiplayerAdapter.instance) {
       FirebaseMultiplayerAdapter.instance.destroy();
     }
@@ -36,8 +43,12 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
   public isLocalPlayer(player: { id?: string; name?: string } | null | undefined): boolean {
     if (!player) return false;
     const currentUid = AuthService.getInstance().getUid();
-    if (this.myUid && player.id === this.myUid) return true;
-    if (currentUid && player.id === currentUid) return true;
+    if (this.myUid && player.id) {
+      return player.id === this.myUid;
+    }
+    if (currentUid && player.id) {
+      return player.id === currentUid;
+    }
     const myStoredName = this.myName || localStorage.getItem('navo_player_name') || '';
     if (myStoredName && player.name && player.name.trim().toLowerCase() === myStoredName.trim().toLowerCase()) {
       return true;
@@ -82,13 +93,16 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
   }
 
   private async fetchCurrentState(): Promise<SyncGameState | null> {
-    if (this.latestGameState) return this.latestGameState;
-    const room = await RoomService.getInstance().getRoom(this.roomCode);
-    if (room?.gameState) {
-      this.latestGameState = room.gameState;
-      return room.gameState;
+    try {
+      const room = await RoomService.getInstance().getRoom(this.roomCode);
+      if (room?.gameState) {
+        this.latestGameState = room.gameState;
+        return room.gameState;
+      }
+    } catch {
+      // fallback
     }
-    return null;
+    return this.latestGameState;
   }
 
   private sanitizeStateForSync(raw: any): SyncGameState {
@@ -377,6 +391,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
 
     this.sounds.playMoneyChime();
     this.latestGameState = state;
+    GameEngine.getInstance().syncWithFirebase(state, this.myUid);
     await RoomService.getInstance().syncGameState(this.roomCode, state);
   }
 
@@ -405,6 +420,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
     state.hoppingState = null;
 
     this.latestGameState = state;
+    GameEngine.getInstance().syncWithFirebase(state, this.myUid);
     await RoomService.getInstance().syncGameState(this.roomCode, state);
   }
 
@@ -442,6 +458,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
     });
 
     this.latestGameState = state;
+    GameEngine.getInstance().syncWithFirebase(state, this.myUid);
     await RoomService.getInstance().syncGameState(this.roomCode, state);
   }
 
@@ -468,6 +485,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
     state.phase = 'PLAYER_TURN';
     state.hoppingState = null;
     this.latestGameState = state;
+    GameEngine.getInstance().syncWithFirebase(state, this.myUid);
     await RoomService.getInstance().syncGameState(this.roomCode, state);
   }
 
@@ -494,6 +512,7 @@ export class FirebaseMultiplayerAdapter implements MultiplayerAdapter {
       state.phase = 'PLAYER_TURN';
       state.hoppingState = null;
       this.latestGameState = state;
+      GameEngine.getInstance().syncWithFirebase(state, this.myUid);
       await RoomService.getInstance().syncGameState(this.roomCode, state);
     }
   }

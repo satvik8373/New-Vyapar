@@ -338,9 +338,14 @@ export class GameEngine {
         : Object.values(gameState.players || {});
       if (pList.length > 0) {
         this.state.players = pList.map((p: any) => {
-          const isMe =
-            (p.id && (p.id === myUid || p.id === currentUid)) ||
-            (localName && p.name && p.name.trim().toLowerCase() === localName.trim().toLowerCase());
+          let isMe = false;
+          if (myUid && p.id) {
+            isMe = p.id === myUid;
+          } else if (currentUid && p.id) {
+            isMe = p.id === currentUid;
+          } else if (localName && p.name) {
+            isMe = p.name.trim().toLowerCase() === localName.trim().toLowerCase();
+          }
           return {
             ...p,
             ownedPropertyIds: Array.isArray(p.ownedPropertyIds) ? p.ownedPropertyIds : [],
@@ -401,24 +406,23 @@ export class GameEngine {
 
     // 4. Dice & Hopping State
     if (gameState.diceState) {
-      this.state.diceState = gameState.diceState;
+      this.state.diceState = {
+        rolling: Boolean(gameState.diceState.rolling),
+        value: typeof gameState.diceState.value === 'number' ? gameState.diceState.value : null
+      };
     }
-    if (gameState.hoppingState !== undefined) {
-      if (gameState.hoppingState) {
-        this.state.hoppingState = {
-          playerId: gameState.hoppingState.playerId,
-          currentStep: gameState.hoppingState.currentStep ?? gameState.hoppingState.toIndex ?? 0,
-          targetStep: gameState.hoppingState.targetStep ?? gameState.hoppingState.toIndex ?? 0
-        };
-      } else {
-        this.state.hoppingState = null;
-      }
+    if (gameState.hoppingState) {
+      this.state.hoppingState = {
+        playerId: gameState.hoppingState.playerId,
+        currentStep: gameState.hoppingState.currentStep ?? gameState.hoppingState.toIndex ?? 0,
+        targetStep: gameState.hoppingState.targetStep ?? gameState.hoppingState.toIndex ?? 0
+      };
+    } else {
+      this.state.hoppingState = null;
     }
 
     // 5. Selected property
-    if (gameState.selectedProperty !== undefined) {
-      this.state.selectedProperty = gameState.selectedProperty;
-    }
+    this.state.selectedProperty = gameState.selectedProperty || null;
 
     // 6. Logs sync
     if (gameState.logs && Array.isArray(gameState.logs)) {
