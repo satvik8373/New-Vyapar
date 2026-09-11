@@ -200,69 +200,38 @@
   background: rgba(241, 245, 249, 0.9);
 }
 
-/* Live Mic Voice Chat Button Styles */
+/* Live Mic Voice Chat Button Styles — Clean, Minimal & Professional */
 .rail-btn.btn-mic {
   position: relative;
-  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .rail-btn.btn-mic.is-mic-off {
   color: #64748b;
 }
 .rail-btn.btn-mic.is-mic-off:hover {
-  color: #0284c7;
-  border-color: #bae6fd;
+  color: #0f172a;
+  border-color: #cbd5e1;
 }
 
 .rail-btn.btn-mic.is-mic-muted {
-  color: #f43f5e;
-  background: rgba(254, 242, 242, 0.95);
-  border-color: #fecdd3;
+  color: #ef4444;
+  background: #fef2f2;
+  border-color: #fee2e2;
 }
 .rail-btn.btn-mic.is-mic-muted:hover {
-  color: #e11d48;
-  border-color: #fda4af;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
 
 .rail-btn.btn-mic.is-mic-live {
-  color: #10b981;
-  background: rgba(236, 253, 245, 0.98);
-  border-color: #a7f3d0;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  color: #0284c7;
+  background: #f0f9ff;
+  border-color: #bae6fd;
 }
 .rail-btn.btn-mic.is-mic-live:hover {
-  color: #059669;
-  border-color: #6ee7b7;
-}
-
-.rail-btn.btn-mic.is-speaking {
-  animation: mic-speaking-ring 1.1s infinite cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-@keyframes mic-speaking-ring {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5), 0 0 12px rgba(16, 185, 129, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0), 0 0 16px rgba(16, 185, 129, 0.6);
-  }
-}
-
-.mic-speaking-dot {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
-  animation: mic-dot-pulse 0.8s infinite alternate;
-}
-
-@keyframes mic-dot-pulse {
-  from { opacity: 0.6; transform: scale(0.85); }
-  to { opacity: 1; transform: scale(1.35); }
+  color: #0369a1;
+  border-color: #7dd3fc;
 }
 
 /* Live Notification Badge */

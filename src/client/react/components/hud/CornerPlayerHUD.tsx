@@ -153,7 +153,7 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
         } as React.CSSProperties}
       >
         {/* Solid Swatch Portrait Avatar */}
-        <div className={`hud-avatar-wrapper ${isSpeaking ? 'is-speaking' : ''}`}>
+        <div className="hud-avatar-wrapper">
           <PlayerAvatar
             avatar={player.avatar}
             name={player.name}
@@ -161,18 +161,6 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
             size={28}
             isActiveTurn={false}
           />
-          {isInVoice && (
-            <span
-              className={`hud-voice-badge ${isSpeaking ? 'speaking' : isMicMuted ? 'muted' : 'active'}`}
-              title={isSpeaking ? `${player.name} is speaking` : isMicMuted ? 'Microphone Muted' : 'Live Voice Connected'}
-            >
-              {isMicMuted ? (
-                <MicOffIcon sx={{ fontSize: 9 }} />
-              ) : (
-                <MicIcon sx={{ fontSize: 9 }} />
-              )}
-            </span>
-          )}
           {isInJail && !isBankrupt && (
             <span className="hud-jail-badge" title="In Jail">
               <LockIcon sx={{ fontSize: 9 }} />
@@ -180,12 +168,31 @@ export const CornerPlayerHUD: React.FC<CornerPlayerHUDProps> = ({
           )}
         </div>
 
-        {/* 2-Row Stack: Top = Name+Role+Timer, Bottom = Money + Card & Trade Actions */}
+        {/* 2-Row Stack: Top = Name+Role+Voice+Timer, Bottom = Money + Card & Trade Actions */}
         <div className="hud-text-stack">
           <div className="hud-name-line">
             <span className="hud-player-name" title={player.name}>
               {player.name.replace(/\s*\(AI\)/i, '').trim()}
             </span>
+            {/* Minimal, Professional Voice Status */}
+            {isInVoice && (
+              <span
+                className={`hud-voice-indicator ${isSpeaking ? 'speaking' : isMicMuted ? 'muted' : 'connected'}`}
+                title={isSpeaking ? `${player.name} is speaking` : isMicMuted ? 'Microphone Muted' : 'Voice Connected'}
+              >
+                {isMicMuted ? (
+                  <MicOffIcon sx={{ fontSize: 11 }} />
+                ) : isSpeaking ? (
+                  <span className="voice-bars" aria-label="Speaking">
+                    <span className="v-bar" />
+                    <span className="v-bar" />
+                    <span className="v-bar" />
+                  </span>
+                ) : (
+                  <MicIcon sx={{ fontSize: 11 }} />
+                )}
+              </span>
+            )}
             {isHeroPlayer && <span className="hud-role-tag">YOU</span>}
             {!player.isHuman && !engine.getMultiplayerAdapter()?.isMultiplayerActive() && (player.avatar === 'bot' || player.name.includes('(AI)')) && (
               <span className="hud-role-tag ai">AI</span>

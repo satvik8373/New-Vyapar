@@ -135,7 +135,7 @@ export const FloatingUtilityRail: React.FC<FloatingUtilityRailProps> = ({
                 : isMicMuted
                 ? 'is-mic-muted'
                 : 'is-mic-live'
-            } ${isSpeaking ? 'is-speaking' : ''}`}
+            }`}
             onClick={onToggleMic}
             title={
               !isMicActive
@@ -151,7 +151,6 @@ export const FloatingUtilityRail: React.FC<FloatingUtilityRailProps> = ({
             ) : (
               <MicOffIcon sx={{ fontSize: 19 }} />
             )}
-            {isSpeaking && <span className="mic-speaking-dot" />}
           </button>
         )}
 
