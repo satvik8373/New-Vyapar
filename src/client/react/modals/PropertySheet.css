@@ -12,9 +12,7 @@
   align-items: center;
   justify-content: center;
   padding: max(12px, calc(env(safe-area-inset-top) + 6px)) max(16px, calc(env(safe-area-inset-right) + 8px)) max(12px, calc(env(safe-area-inset-bottom) + 6px)) max(16px, calc(env(safe-area-inset-left) + 8px));
-  background: rgba(8, 15, 35, 0.65);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(8, 15, 35, 0.72);
   animation: deedFade 0.2s ease;
 }
 

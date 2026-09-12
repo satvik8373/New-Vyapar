@@ -5,105 +5,25 @@ import {
   DialogActions,
   Typography,
   Box,
-  IconButton
+  IconButton,
+  Chip,
+  Alert
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { CurrencyCoin } from '../components/common/CurrencyCoin';
-import { GreenHouseIcon, RedHotelIcon } from '../components/common/HouseHotelIcons';
-import { GameEngine, GameEngineState } from '../../game-engine/GameEngine';
+import { GameEngine, GameEngineState, TradeProposal } from '../../game-engine/GameEngine';
 import { BOARD_TILES, BoardTileStep, COLOR_HEX_MAP } from '@shared/game-data/boardData';
 import { CandyButton } from '../components/common/CandyButton';
-import { CandyPill } from '../components/common/CandyPill';
 
 interface TradeModalProps {
   open: boolean;
   onClose: () => void;
-  onSendOffer: (details: string) => void;
+  onSendOffer?: (details: string) => void;
 }
-
-/** Mini Title Deed Card Component mirroring the classic board title deed */
-const MiniTitleDeed: React.FC<{ tile: BoardTileStep; compact?: boolean }> = ({ tile, compact = false }) => {
-  const accentHex = tile.color ? COLOR_HEX_MAP[tile.color] || '#2563eb' : '#2563eb';
-  const price = tile.price || 1500;
-  const baseRent = Math.round(price * 0.1);
-  const rent1 = baseRent * 3;
-  const rentHotel = baseRent * 40;
-
-  return (
-    <Box
-      sx={{
-        width: { xs: 112, sm: compact ? 125 : 138 },
-        backgroundColor: '#ffffff',
-        border: '1.5px solid rgba(226, 232, 240, 0.95)',
-        borderRadius: '10px',
-        boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
-        overflow: 'hidden',
-        fontFamily: '"Plus Jakarta Sans", sans-serif',
-        textAlign: 'center',
-        flexShrink: 0
-      }}
-    >
-      {/* Colored City Banner */}
-      <Box
-        sx={{
-          backgroundColor: accentHex,
-          color: '#ffffff',
-          py: 0.5,
-          px: 0.5,
-          borderBottom: '1px solid rgba(0,0,0,0.1)'
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: '10.5px',
-            fontWeight: 850,
-            letterSpacing: '0.02em',
-            lineHeight: 1.1,
-            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-            fontFamily: '"Plus Jakarta Sans", sans-serif'
-          }}
-        >
-          {tile.name.toUpperCase()}
-        </Typography>
-      </Box>
-
-      {/* Deed Body */}
-      <Box sx={{ p: '5px 8px', backgroundColor: '#fafbfc' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.4, mb: 0.2 }}>
-          <Typography sx={{ fontSize: '9px', fontWeight: 850, color: '#0f172a' }}>RENT</Typography>
-          <CurrencyCoin size={10} />
-          <Typography sx={{ fontSize: '10.5px', fontWeight: 850, color: '#0f172a' }}>{baseRent}</Typography>
-        </Box>
-
-        <Typography sx={{ fontSize: '7.5px', color: '#64748b', fontStyle: 'italic', lineHeight: 1.1, mb: 0.5 }}>
-          Rent doubled on set
-        </Typography>
-
-        {/* Mini Schedule */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px', borderTop: '1px solid rgba(226, 232, 240, 0.8)', pt: 0.4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '8px' }}>
-            <GreenHouseIcon size={10} />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, fontWeight: 750 }}>
-              <CurrencyCoin size={8} />
-              <span>{rent1}</span>
-            </Box>
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '8px' }}>
-            <RedHotelIcon size={10} />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, fontWeight: 800, color: '#f43f5e' }}>
-              <CurrencyCoin size={8} />
-              <span>{rentHotel}</span>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
-  );
-};
 
 export const TradeModal: React.FC<TradeModalProps> = ({ open, onClose, onSendOffer }) => {
   const engine = GameEngine.getInstance();
@@ -113,46 +33,95 @@ export const TradeModal: React.FC<TradeModalProps> = ({ open, onClose, onSendOff
     return engine.subscribe((state) => setEngineState(state));
   }, [engine]);
 
-  const { players, activePlayerIndex } = engineState;
-  const activePlayer = players[activePlayerIndex];
-  const otherPlayers = players.filter((p) => p.id !== activePlayer?.id && !p.isBankrupt);
+  const { players } = engineState;
+  const heroPlayer = players.find((p) => p.isHuman) || players[0];
+  const otherPlayers = players.filter((p) => p.id !== heroPlayer?.id && !p.isBankrupt);
 
-  const [selectedPartnerIndex, setSelectedPartnerIndex] = useState(0);
-  const targetPartner = otherPlayers[selectedPartnerIndex] || otherPlayers[0] || null;
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>(
+    otherPlayers[0]?.id || ''
+  );
 
-  const [offerCash, setOfferCash] = useState(500);
+  useEffect(() => {
+    if (!selectedPartnerId && otherPlayers.length > 0) {
+      setSelectedPartnerId(otherPlayers[0].id);
+    }
+  }, [otherPlayers, selectedPartnerId]);
+
+  const targetPartner = otherPlayers.find((p) => p.id === selectedPartnerId) || otherPlayers[0] || null;
+
+  const [offerCash, setOfferCash] = useState(0);
   const [requestCash, setRequestCash] = useState(0);
 
-  // Property selections
-  const myProperties = activePlayer
-    ? BOARD_TILES.filter((t) => activePlayer.ownedPropertyIds?.includes(t.step))
-    : [];
-  const partnerProperties = targetPartner
-    ? BOARD_TILES.filter((t) => targetPartner.ownedPropertyIds?.includes(t.step))
-    : [];
+  // Multi-select properties
+  const [selectedMySteps, setSelectedMySteps] = useState<number[]>([]);
+  const [selectedPartnerSteps, setSelectedPartnerSteps] = useState<number[]>([]);
 
-  const [selectedMyPropStep, setSelectedMyPropStep] = useState<number | null>(null);
-  const [selectedPartnerPropStep, setSelectedPartnerPropStep] = useState<number | null>(null);
+  // Feedback banner (result of trade attempt)
+  const [tradeResult, setTradeResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Set default selection when available
+  // Clear selections when partner changes
   useEffect(() => {
-    if (myProperties.length > 0 && selectedMyPropStep === null) {
-      setSelectedMyPropStep(myProperties[0].step);
-    }
-    if (partnerProperties.length > 0 && selectedPartnerPropStep === null) {
-      setSelectedPartnerPropStep(partnerProperties[0].step);
-    }
-  }, [myProperties, partnerProperties, selectedMyPropStep, selectedPartnerPropStep]);
+    setSelectedMySteps([]);
+    setSelectedPartnerSteps([]);
+    setOfferCash(0);
+    setRequestCash(0);
+    setTradeResult(null);
+  }, [selectedPartnerId]);
 
-  if (!activePlayer || !targetPartner) return null;
+  if (!heroPlayer || !targetPartner) return null;
 
-  const myDeed = myProperties.find((t) => t.step === selectedMyPropStep) || myProperties[0] || BOARD_TILES[1];
-  const partnerDeed = partnerProperties.find((t) => t.step === selectedPartnerPropStep) || partnerProperties[0] || BOARD_TILES[3];
+  const myProperties = BOARD_TILES.filter((t) => heroPlayer.ownedPropertyIds?.includes(t.step));
+  const partnerProperties = BOARD_TILES.filter((t) => targetPartner.ownedPropertyIds?.includes(t.step));
+
+  const toggleMyStep = (step: number) => {
+    setTradeResult(null);
+    setSelectedMySteps((prev) =>
+      prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
+    );
+  };
+
+  const togglePartnerStep = (step: number) => {
+    setTradeResult(null);
+    setSelectedPartnerSteps((prev) =>
+      prev.includes(step) ? prev.filter((s) => s !== step) : [...prev, step]
+    );
+  };
+
+  // Total valuation calculation
+  const myOfferedVal =
+    offerCash +
+    selectedMySteps.reduce((sum, s) => {
+      const tile = BOARD_TILES.find((t) => t.step === s);
+      return sum + (tile?.price || 1000);
+    }, 0);
+
+  const partnerRequestedVal =
+    requestCash +
+    selectedPartnerSteps.reduce((sum, s) => {
+      const tile = BOARD_TILES.find((t) => t.step === s);
+      return sum + (tile?.price || 1000);
+    }, 0);
 
   const handleSend = () => {
-    const offerText = `Offered ${myDeed.name} + ₹${offerCash} for ${partnerDeed.name}${requestCash > 0 ? ` + ₹${requestCash}` : ''}`;
-    onSendOffer(offerText);
-    onClose();
+    const proposal: TradeProposal = {
+      fromPlayerId: heroPlayer.id,
+      toPlayerId: targetPartner.id,
+      offeredPropertySteps: selectedMySteps,
+      offeredCash: offerCash,
+      requestedPropertySteps: selectedPartnerSteps,
+      requestedCash: requestCash
+    };
+
+    const res = engine.executeTrade(proposal);
+    if (res.success) {
+      setTradeResult({ type: 'success', message: res.message });
+      if (onSendOffer) onSendOffer(res.message);
+      setTimeout(() => {
+        onClose();
+      }, 1800);
+    } else {
+      setTradeResult({ type: 'error', message: res.message });
+    }
   };
 
   return (
@@ -165,10 +134,10 @@ export const TradeModal: React.FC<TradeModalProps> = ({ open, onClose, onSendOff
         sx: {
           background: '#ffffff',
           border: '1.5px solid rgba(226, 232, 240, 0.95)',
-          borderRadius: '12px',
-          boxShadow: '0 20px 50px -10px rgba(15, 23, 42, 0.25)',
-          width: 'min(560px, calc(100vw - 20px))',
-          maxHeight: 'min(375px, calc(100vh - 16px))',
+          borderRadius: '20px',
+          boxShadow: '0 24px 60px -10px rgba(15, 23, 42, 0.28)',
+          width: 'min(580px, calc(100vw - 20px))',
+          maxHeight: 'min(620px, calc(100vh - 24px))',
           m: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -179,9 +148,9 @@ export const TradeModal: React.FC<TradeModalProps> = ({ open, onClose, onSendOff
       {/* Top Banner: Candy Azure Header */}
       <Box
         sx={{
-          background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-          py: 0.8,
-          px: 1.8,
+          background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
+          py: 1.2,
+          px: 2,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -193,19 +162,19 @@ export const TradeModal: React.FC<TradeModalProps> = ({ open, onClose, onSendOff
           <Typography
             sx={{
               fontWeight: 850,
-              fontSize: '15px',
+              fontSize: '16px',
               letterSpacing: '-0.01em',
               lineHeight: 1.1,
               fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif'
             }}
           >
-            TRADE DESK
+            TRADE DESK (વેપાર સોદો)
           </Typography>
           <Typography
             sx={{
               fontWeight: 600,
               color: 'rgba(255, 255, 255, 0.85)',
-              fontSize: '10px',
+              fontSize: '11px',
               mt: 0.2
             }}
           >
@@ -217,134 +186,265 @@ export const TradeModal: React.FC<TradeModalProps> = ({ open, onClose, onSendOff
           variant="glass"
           size="xs"
           onClick={onClose}
-          style={{ minHeight: '26px', padding: '3px 6px', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}
+          style={{ minHeight: '28px', padding: '3px 8px', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}
         >
-          <CloseIcon sx={{ fontSize: 16 }} />
+          <CloseIcon sx={{ fontSize: 18 }} />
         </CandyButton>
       </Box>
 
       {/* Main Content Area */}
-      <DialogContent sx={{ p: 1.2, backgroundColor: '#f8fafc', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {/* Two Player Tags: Active Player (Left) vs Target Player (Right) */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {/* Active Player Tag */}
-          <CandyPill
-            variant="berry"
-            size="sm"
-            style={{ fontWeight: 800, padding: '3px 10px' }}
-          >
-            {activePlayer.name} (You)
-          </CandyPill>
-
-          <SwapHorizIcon sx={{ color: '#3b82f6', fontSize: 22 }} />
-
-          {/* Target Player Tag */}
-          <CandyPill
-            variant="honey"
-            size="sm"
-            style={{ fontWeight: 800, padding: '3px 10px' }}
-          >
-            {targetPartner.name} (Partner)
-          </CandyPill>
+      <DialogContent
+        sx={{
+          p: 1.5,
+          backgroundColor: '#f8fafc',
+          overflowY: 'auto',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.5
+        }}
+      >
+        {/* Partner Selector Chips */}
+        <Box>
+          <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#64748b', mb: 0.5, textTransform: 'uppercase' }}>
+            Select Trading Partner:
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
+            {otherPlayers.map((p) => (
+              <Chip
+                key={p.id}
+                label={`${p.name} (₹${p.balance.toLocaleString()})`}
+                onClick={() => setSelectedPartnerId(p.id)}
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '11.5px',
+                  backgroundColor: selectedPartnerId === p.id ? '#7c3aed' : '#ffffff',
+                  color: selectedPartnerId === p.id ? '#ffffff' : '#334155',
+                  border: '1.5px solid',
+                  borderColor: selectedPartnerId === p.id ? '#7c3aed' : '#cbd5e1',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: selectedPartnerId === p.id ? '#6d28d9' : '#f1f5f9'
+                  }
+                }}
+              />
+            ))}
+          </Box>
         </Box>
 
-        {/* Title Deeds Exchange Stage */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', gap: 1 }}>
-          {/* Left: Your Offered Title Deed */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.6 }}>
-            <Typography sx={{ fontSize: '9.5px', fontWeight: 800, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              YOU GIVE
-            </Typography>
+        {/* Feedback Alert */}
+        {tradeResult && (
+          <Alert
+            severity={tradeResult.type}
+            icon={tradeResult.type === 'success' ? <CheckCircleOutlineIcon fontSize="inherit" /> : undefined}
+            sx={{ borderRadius: '12px', py: 0.5 }}
+          >
+            {tradeResult.message}
+          </Alert>
+        )}
 
-            <MiniTitleDeed tile={myDeed} />
-
-            {/* Cash offer adjust row */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.3,
-                backgroundColor: '#ffffff',
-                border: '1px solid rgba(203, 213, 225, 0.8)',
-                borderRadius: '8px',
-                p: '2px 6px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-              }}
-            >
-              <IconButton
-                size="small"
-                onClick={() => setOfferCash((c) => Math.max(0, c - 100))}
-                sx={{ p: 0.2 }}
-              >
-                <RemoveIcon sx={{ fontSize: 13 }} />
-              </IconButton>
-              <CurrencyCoin size={11} />
-              <Typography sx={{ fontSize: '11px', fontWeight: 800, minWidth: '38px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
-                +{offerCash}
+        {/* Trade Exchange Columns */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            gap: 1,
+            alignItems: 'start'
+          }}
+        >
+          {/* Left: You Offer */}
+          <Box
+            sx={{
+              backgroundColor: '#ffffff',
+              borderRadius: '14px',
+              border: '1.5px solid #e2e8f0',
+              p: 1.2,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontSize: '11.5px', fontWeight: 850, color: '#0f172a' }}>
+                YOU GIVE
               </Typography>
-              <IconButton
-                size="small"
-                onClick={() => setOfferCash((c) => Math.min(activePlayer.balance, c + 100))}
-                sx={{ p: 0.2 }}
-              >
-                <AddIcon sx={{ fontSize: 13 }} />
-              </IconButton>
+              <Typography sx={{ fontSize: '10.5px', color: '#64748b' }}>
+                Total: ₹{myOfferedVal.toLocaleString()}
+              </Typography>
+            </Box>
+
+            {/* Properties Owned List */}
+            <Typography sx={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8' }}>
+              Select Properties to Offer:
+            </Typography>
+            {myProperties.length === 0 ? (
+              <Typography sx={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic', py: 1 }}>
+                No properties owned
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: '160px', overflowY: 'auto' }}>
+                {myProperties.map((tile) => {
+                  const isSelected = selectedMySteps.includes(tile.step);
+                  const accentHex = tile.color ? COLOR_HEX_MAP[tile.color] || '#2563eb' : '#2563eb';
+                  return (
+                    <Box
+                      key={tile.step}
+                      onClick={() => toggleMyStep(tile.step)}
+                      sx={{
+                        p: '5px 8px',
+                        borderRadius: '8px',
+                        border: '1.5px solid',
+                        borderColor: isSelected ? accentHex : '#e2e8f0',
+                        backgroundColor: isSelected ? `${accentHex}15` : '#f8fafc',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: accentHex }} />
+                        <Typography sx={{ fontSize: '11.5px', fontWeight: 800, color: '#0f172a' }}>
+                          {tile.name}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b' }}>
+                        ₹{tile.price?.toLocaleString()}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+
+            {/* Cash Stepper */}
+            <Box sx={{ mt: 'auto', pt: 0.5, borderTop: '1px solid #f1f5f9' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', mb: 0.4 }}>
+                Cash Offer (Bal: ₹{heroPlayer.balance.toLocaleString()}):
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc', borderRadius: '8px', p: '2px 6px', border: '1px solid #e2e8f0' }}>
+                <IconButton size="small" onClick={() => setOfferCash((c) => Math.max(0, c - 200))}>
+                  <RemoveIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                  <CurrencyCoin size={12} />
+                  <Typography sx={{ fontSize: '12px', fontWeight: 850 }}>+{offerCash}</Typography>
+                </Box>
+                <IconButton size="small" onClick={() => setOfferCash((c) => Math.min(heroPlayer.balance, c + 200))}>
+                  <AddIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Box>
             </Box>
           </Box>
 
-          <SwapHorizIcon sx={{ color: '#3b82f6', fontSize: 24 }} />
+          {/* Middle Icon */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pt: 6 }}>
+            <SwapHorizIcon sx={{ color: '#7c3aed', fontSize: 28 }} />
+          </Box>
 
-          {/* Right: Partner's Title Deed */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.6 }}>
-            <Typography sx={{ fontSize: '9.5px', fontWeight: 800, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              YOU RECEIVE
-            </Typography>
-
-            <MiniTitleDeed tile={partnerDeed} />
-
-            {/* Cash requested adjust row */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.3,
-                backgroundColor: '#ffffff',
-                border: '1px solid rgba(203, 213, 225, 0.8)',
-                borderRadius: '8px',
-                p: '2px 6px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-              }}
-            >
-              <IconButton
-                size="small"
-                onClick={() => setRequestCash((c) => Math.max(0, c - 100))}
-                sx={{ p: 0.2 }}
-              >
-                <RemoveIcon sx={{ fontSize: 13 }} />
-              </IconButton>
-              <CurrencyCoin size={11} />
-              <Typography sx={{ fontSize: '11px', fontWeight: 800, minWidth: '38px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
-                +{requestCash}
+          {/* Right: Partner Gives */}
+          <Box
+            sx={{
+              backgroundColor: '#ffffff',
+              borderRadius: '14px',
+              border: '1.5px solid #e2e8f0',
+              p: 1.2,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontSize: '11.5px', fontWeight: 850, color: '#0f172a' }}>
+                YOU RECEIVE
               </Typography>
-              <IconButton
-                size="small"
-                onClick={() => setRequestCash((c) => Math.min(targetPartner.balance, c + 100))}
-                sx={{ p: 0.2 }}
-              >
-                <AddIcon sx={{ fontSize: 13 }} />
-              </IconButton>
+              <Typography sx={{ fontSize: '10.5px', color: '#64748b' }}>
+                Total: ₹{partnerRequestedVal.toLocaleString()}
+              </Typography>
+            </Box>
+
+            {/* Partner Properties List */}
+            <Typography sx={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8' }}>
+              Select Properties to Request:
+            </Typography>
+            {partnerProperties.length === 0 ? (
+              <Typography sx={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic', py: 1 }}>
+                Partner owns no properties
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: '160px', overflowY: 'auto' }}>
+                {partnerProperties.map((tile) => {
+                  const isSelected = selectedPartnerSteps.includes(tile.step);
+                  const accentHex = tile.color ? COLOR_HEX_MAP[tile.color] || '#2563eb' : '#2563eb';
+                  return (
+                    <Box
+                      key={tile.step}
+                      onClick={() => togglePartnerStep(tile.step)}
+                      sx={{
+                        p: '5px 8px',
+                        borderRadius: '8px',
+                        border: '1.5px solid',
+                        borderColor: isSelected ? accentHex : '#e2e8f0',
+                        backgroundColor: isSelected ? `${accentHex}15` : '#f8fafc',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: accentHex }} />
+                        <Typography sx={{ fontSize: '11.5px', fontWeight: 800, color: '#0f172a' }}>
+                          {tile.name}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b' }}>
+                        ₹{tile.price?.toLocaleString()}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+
+            {/* Requested Cash Stepper */}
+            <Box sx={{ mt: 'auto', pt: 0.5, borderTop: '1px solid #f1f5f9' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', mb: 0.4 }}>
+                Cash Requested (Bal: ₹{targetPartner.balance.toLocaleString()}):
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f8fafc', borderRadius: '8px', p: '2px 6px', border: '1px solid #e2e8f0' }}>
+                <IconButton size="small" onClick={() => setRequestCash((c) => Math.max(0, c - 200))}>
+                  <RemoveIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                  <CurrencyCoin size={12} />
+                  <Typography sx={{ fontSize: '12px', fontWeight: 850 }}>+{requestCash}</Typography>
+                </Box>
+                <IconButton size="small" onClick={() => setRequestCash((c) => Math.min(targetPartner.balance, c + 200))}>
+                  <AddIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Box>
             </Box>
           </Box>
         </Box>
       </DialogContent>
 
       {/* Actions */}
-      <DialogActions sx={{ p: '8px 14px', gap: 1, backgroundColor: '#ffffff', borderTop: '1px solid rgba(226, 232, 240, 0.8)', flexShrink: 0 }}>
+      <DialogActions sx={{ p: '10px 16px', gap: 1, backgroundColor: '#ffffff', borderTop: '1px solid #e2e8f0', flexShrink: 0 }}>
         <CandyButton variant="glass" size="sm" onClick={onClose}>
-          Decline
+          Cancel
         </CandyButton>
-        <CandyButton fullWidth variant="azure" size="sm" onClick={handleSend}>
-          Send Trade Offer
+        <CandyButton
+          fullWidth
+          variant="azure"
+          size="sm"
+          disabled={selectedMySteps.length === 0 && offerCash === 0 && selectedPartnerSteps.length === 0 && requestCash === 0}
+          onClick={handleSend}
+          style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)' }}
+        >
+          Propose Trade Deal
         </CandyButton>
       </DialogActions>
     </Dialog>

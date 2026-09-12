@@ -5,7 +5,9 @@ import DomainAddIcon from '@mui/icons-material/DomainAdd';
 import { GameEngine, GameEngineState } from '../../game-engine/GameEngine';
 import { PropertySheet } from '../modals/PropertySheet';
 import { EventCardModal } from '../modals/EventCardModal';
-import { TradeModal } from '../modals/TradeModal';
+import { OperationsDeskModal, OperationsTab } from '../modals/OperationsDeskModal';
+import { GameFloatingNav } from '../components/hud/GameFloatingNav';
+import { ChanceDeckModal } from '../modals/ChanceDeckModal';
 import { SettingsDialog } from '../modals/SettingsDialog';
 import { ResultModal } from '../modals/ResultModal';
 import { DeedLedgerModal } from '../modals/DeedLedgerModal';
@@ -17,13 +19,11 @@ import { BOARD_TILES } from '@shared/game-data/boardData';
 import { GameBridge } from '../../bridge/GameBridge';
 import { CandyButton } from '../components/common';
 import { CornerPlayerHUD, HUDPlayerData } from '../components/hud/CornerPlayerHUD';
-import { FloatingUtilityRail } from '../components/hud/FloatingUtilityRail';
 import { ActivityLogDrawer } from '../components/hud/ActivityLogDrawer';
 import { TitleDeedPopupModal } from '../modals/TitleDeedPopupModal';
 import { OpponentLeftModal } from '../modals/OpponentLeftModal';
 import { VoiceChatService, VoiceChatState } from '../../services/VoiceChatService';
 import { AuthService } from '../../firebase/authService';
-import { NetworkQualityService } from '../../services/NetworkQualityService';
 import { FirebaseMultiplayerAdapter } from '../../firebase/firebaseMultiplayerAdapter';
 import { SoundEffects } from '../../audio/SoundEffects';
 
@@ -36,12 +36,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
   const engine = GameEngine.getInstance();
   const bridge = GameBridge.getInstance();
   const voiceService = VoiceChatService.getInstance();
-  const networkService = NetworkQualityService.getInstance();
-
   const [engineState, setEngineState] = useState<GameEngineState>(engine.getState());
   const [isMuted, setIsMuted] = useState<boolean>(() => SoundEffects.getInstance().getIsMuted());
   const [voiceState, setVoiceState] = useState<VoiceChatState>(voiceService.getState());
-  const [networkPing, setNetworkPing] = useState<number>(() => networkService.getPing());
 
   const {
     players,
@@ -57,7 +54,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
 
   // Modal & Drawer dialog states
   const [bankOpen, setBankOpen] = useState(false);
-  const [tradeOpen, setTradeOpen] = useState(false);
+  const [operationsDeskOpen, setOperationsDeskOpen] = useState(false);
+  const [operationsDeskTab, setOperationsDeskTab] = useState<OperationsTab>('build');
+  const [operationsDeskPartner, setOperationsDeskPartner] = useState<string | undefined>(undefined);
+  const [chanceDeckOpen, setChanceDeckOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
@@ -154,12 +154,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
     };
   }, [roomCode, heroPlayer?.id, heroPlayer?.name]);
 
-  // ── Network Quality Ping Listener ────────────────────────────────────────
-  useEffect(() => {
-    return networkService.subscribe((ping) => {
-      setNetworkPing(ping);
-    });
-  }, [networkService]);
+
 
   // ── Sound Effects Mute Sync Listener ──────────────────────────────────────
   useEffect(() => {
@@ -249,6 +244,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (settingsOpen || engineState.isPaused) return;
       if (e.code === 'Space' || e.key === ' ') {
         if (canRoll) {
           e.preventDefault();
@@ -278,7 +274,17 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
   }, [canRoll, canEndTurn, phase, engineState.selectedProperty, isHumanTurn, activePlayerData?.balance, engine]);
 
   const handleInspectTile = (tile: BoardTileStep) => {
+    if (tile.type === 'CHANCE') {
+      setChanceDeckOpen(true);
+      return;
+    }
     engine.inspectProperty(tile.step);
+  };
+
+  const handleOpenOperationsDesk = (tab?: OperationsTab, partnerId?: string) => {
+    if (tab) setOperationsDeskTab(tab);
+    if (partnerId) setOperationsDeskPartner(partnerId);
+    setOperationsDeskOpen(true);
   };
 
   // Arrange players across 4 corners (Human player anchors to bottom-right hero spot)
@@ -376,7 +382,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           player={pTopLeft}
           position="top-left"
           isActiveTurn={activePlayer?.id === pTopLeft.id}
-          onTrade={() => setTradeOpen(true)}
+          onTrade={(p) => handleOpenOperationsDesk('trade', p.id)}
           isInVoice={Boolean(voiceState.peers[pTopLeft.id])}
           isMicMuted={voiceState.peers[pTopLeft.id]?.isMuted}
           isSpeaking={voiceState.peers[pTopLeft.id]?.isSpeaking}
@@ -391,7 +397,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           player={pTopRight}
           position="top-right"
           isActiveTurn={activePlayer?.id === pTopRight.id}
-          onTrade={() => setTradeOpen(true)}
+          onTrade={(p) => handleOpenOperationsDesk('trade', p.id)}
           isInVoice={Boolean(voiceState.peers[pTopRight.id])}
           isMicMuted={voiceState.peers[pTopRight.id]?.isMuted}
           isSpeaking={voiceState.peers[pTopRight.id]?.isSpeaking}
@@ -406,7 +412,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           player={pBottomLeft}
           position="bottom-left"
           isActiveTurn={activePlayer?.id === pBottomLeft.id}
-          onTrade={() => setTradeOpen(true)}
+          onTrade={(p) => handleOpenOperationsDesk('trade', p.id)}
           isInVoice={Boolean(voiceState.peers[pBottomLeft.id])}
           isMicMuted={voiceState.peers[pBottomLeft.id]?.isMuted}
           isSpeaking={voiceState.peers[pBottomLeft.id]?.isSpeaking}
@@ -427,7 +433,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           isInVoice={voiceState.isInVoice}
           isMicMuted={voiceState.isMuted}
           isSpeaking={voiceState.isSpeaking}
-          pingMs={networkPing}
         />
       )}
 
@@ -462,14 +467,15 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
           description={activeChanceCard?.description || ''}
           amount={activeChanceCard?.amount ?? 0}
           isReward={activeChanceCard?.isReward ?? true}
-          onClose={() => {}}
+          onClose={() => engine.dismissChanceCard()}
         />
       </Box>
 
       {/* ====================================================================
-          3. BOTTOM FLOATING UTILITY CONSOLE DOCK (WITH ZOOM HUMP & ACTIONS)
+          3. UNIFIED GAME FLOATING NAVIGATION (ACTIONS & UTILITIES)
           ==================================================================== */}
-      <FloatingUtilityRail
+      <GameFloatingNav
+        onOpenOperationsDesk={handleOpenOperationsDesk}
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
         isMicActive={voiceState.isInVoice}
@@ -480,22 +486,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
         onZoomOut={() => boardRef.current?.zoomOut()}
         onResetZoom={() => boardRef.current?.resetZoom()}
         boardScale={boardScale}
-        onOpenTrade={() => setTradeOpen(true)}
         onOpenBank={() => setBankOpen(true)}
+        onOpenChance={() => setChanceDeckOpen(true)}
         onOpenLogs={() => setLogsOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
         unreadLogCount={logs.length}
         isPortrait={isPortraitMobile}
       />
 
-      {/* ====================================================================
-          4. BOTTOM MATCH STATUS & NETWORK PING BAR (REFERENCE STYLE)
-          ==================================================================== */}
-      <div className="bottom-match-ping-bar">
-        <span className="ping-text">ping: {networkPing} ms</span>
-        {latestLog && <span className="latest-log-pill">{latestLog}</span>}
-        <span className="version-text">v2.19.27 • GUJARAT BUSINESS BOARD</span>
-      </div>
 
       {/* ====================================================================
           5. SLIDE-OUT ACTIVITY LOG DRAWER
@@ -580,15 +578,25 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
         </Box>
       )}
 
-      <TradeModal
-        open={tradeOpen}
-        onClose={() => setTradeOpen(false)}
-        onSendOffer={(msg) => bridge.emitToast(`Trade offer sent: ${msg}`, 'info')}
-      />
-
       <NavoBankDrawer
         open={bankOpen}
         onClose={() => setBankOpen(false)}
+      />
+
+      <OperationsDeskModal
+        open={operationsDeskOpen}
+        initialTab={operationsDeskTab}
+        initialTradePartnerId={operationsDeskPartner}
+        onSendTradeOffer={(msg) => bridge.emitToast(msg, 'info')}
+        onClose={() => {
+          setOperationsDeskOpen(false);
+          setOperationsDeskPartner(undefined);
+        }}
+      />
+
+      <ChanceDeckModal
+        open={chanceDeckOpen}
+        onClose={() => setChanceDeckOpen(false)}
       />
 
       <SettingsDialog

@@ -7,17 +7,25 @@ import {
   Typography,
   Box,
   Switch,
-  FormControlLabel,
   Divider,
-  DialogContentText
+  DialogContentText,
+  Alert
 } from '@mui/material';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
+import VoiceOverOffIcon from '@mui/icons-material/VoiceOverOff';
+import SaveIcon from '@mui/icons-material/Save';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import LogoutIcon from '@mui/icons-material/Logout';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PauseCircleFilledIcon from '@mui/icons-material/PauseCircleFilled';
 import { CandyButton } from '../components/common/CandyButton';
 import { SoundEffects } from '../../audio/SoundEffects';
+import { VoiceAnnouncer } from '../../services/VoiceAnnouncer';
+import { GameEngine } from '../../game-engine/GameEngine';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -34,18 +42,67 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   onLeaveGame,
   onLogout
 }) => {
+  const engine = GameEngine.getInstance();
   const [sound, setSound] = useState(() => !SoundEffects.getInstance().getIsMuted());
+  const [voiceEnabled, setVoiceEnabled] = useState(() => VoiceAnnouncer.getInstance().isEnabled());
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [saveToast, setSaveToast] = useState<string | null>(null);
+
+  const hasSavedMatch = engine.hasSavedGame();
+  const savedSummary = engine.getSavedGameSummary();
+
+  // Pause gameplay when Settings is open, resume when closed
+  useEffect(() => {
+    if (open) {
+      engine.pauseGame();
+    } else {
+      engine.resumeGame();
+    }
+    return () => {
+      if (open) {
+        engine.resumeGame();
+      }
+    };
+  }, [open, engine]);
 
   useEffect(() => {
-    return SoundEffects.getInstance().subscribe((isMuted) => {
+    const unsubSound = SoundEffects.getInstance().subscribe((isMuted) => {
       setSound(!isMuted);
     });
+    const unsubVoice = VoiceAnnouncer.getInstance().subscribe((enabled) => {
+      setVoiceEnabled(enabled);
+    });
+    return () => {
+      unsubSound();
+      unsubVoice();
+    };
   }, []);
 
   const handleToggleSound = (enabled: boolean) => {
     setSound(enabled);
     SoundEffects.getInstance().setMuted(!enabled);
+  };
+
+  const handleToggleVoice = (enabled: boolean) => {
+    setVoiceEnabled(enabled);
+    VoiceAnnouncer.getInstance().setEnabled(enabled);
+  };
+
+  const handleSaveMatch = () => {
+    const success = engine.saveGame();
+    if (success) {
+      SoundEffects.getInstance().playMoneyChime();
+      setSaveToast('Match saved successfully to local storage!');
+      setTimeout(() => setSaveToast(null), 3500);
+    }
+  };
+
+  const handleLoadMatch = () => {
+    const success = engine.loadGame();
+    if (success) {
+      SoundEffects.getInstance().playPurchaseJingle();
+      onClose();
+    }
   };
 
   return (
@@ -58,9 +115,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
         PaperProps={{
           sx: {
             background: 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)',
-            boxShadow: '0 24px 60px -12px rgba(15, 23, 42, 0.22)',
+            boxShadow: '0 24px 60px -12px rgba(15, 23, 42, 0.25)',
             border: '1.5px solid rgba(226, 232, 240, 0.95)',
-            borderRadius: '20px',
+            borderRadius: '24px',
             p: 1.5
           }
         }}
@@ -68,25 +125,67 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
         <DialogTitle
           sx={{
             color: '#0f172a',
-            fontWeight: 850,
+            fontWeight: 900,
             textAlign: 'center',
-            fontSize: '18px',
+            fontSize: '19px',
             letterSpacing: '-0.02em',
-            fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif'
+            fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
+            pb: 0.5
           }}
         >
-          Game Settings
+          Options & Controls
         </DialogTitle>
 
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {/* Audio Sound Effects */}
+        {/* Cartoon Candy Match Paused Banner */}
+        <Box
+          sx={{
+            mx: { xs: 1.5, sm: 2 },
+            mb: 0.8,
+            py: 0.6,
+            px: 1.2,
+            borderRadius: '9999px',
+            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+            border: '1.5px solid #f59e0b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.8,
+            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.18)'
+          }}
+        >
+          <PauseCircleFilledIcon sx={{ color: '#d97706', fontSize: 18 }} />
+          <Typography
+            sx={{
+              color: '#92400e',
+              fontWeight: 850,
+              fontSize: '11.5px',
+              fontFamily: '"Plus Jakarta Sans", sans-serif',
+              letterSpacing: '0.01em'
+            }}
+          >
+            Match Paused — Take your time!
+          </Typography>
+        </Box>
+
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, px: 1 }}>
+          {saveToast && (
+            <Alert
+              icon={<CheckCircleIcon fontSize="inherit" />}
+              severity="success"
+              sx={{ borderRadius: '12px', fontWeight: 700, fontSize: '12px', py: 0.5 }}
+            >
+              {saveToast}
+            </Alert>
+          )}
+
+          {/* 1. Audio Sound Effects */}
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               p: 1.2,
-              borderRadius: '12px',
+              borderRadius: '14px',
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0'
             }}
@@ -99,10 +198,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               )}
               <Box>
                 <Typography sx={{ color: '#0f172a', fontWeight: 800, fontSize: '13px' }}>
-                  Game Audio & Sound
+                  Sound Effects
                 </Typography>
                 <Typography sx={{ color: '#64748b', fontSize: '11px', fontWeight: 600 }}>
-                  {sound ? 'Dice rolls, cars & board effects active' : 'All sounds muted'}
+                  {sound ? 'Dice, cars & chimes active' : 'All sounds muted'}
                 </Typography>
               </Box>
             </Box>
@@ -113,9 +212,75 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             />
           </Box>
 
+          {/* 2. Voice Announcer */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 1.2,
+              borderRadius: '14px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              {voiceEnabled ? (
+                <RecordVoiceOverIcon sx={{ color: '#2563eb', fontSize: 22 }} />
+              ) : (
+                <VoiceOverOffIcon sx={{ color: '#94a3b8', fontSize: 22 }} />
+              )}
+              <Box>
+                <Typography sx={{ color: '#0f172a', fontWeight: 800, fontSize: '13px' }}>
+                  Live Voice Announcer
+                </Typography>
+                <Typography sx={{ color: '#64748b', fontSize: '11px', fontWeight: 600 }}>
+                  {voiceEnabled ? 'Spoken commentary on turn events' : 'Speech announcer off'}
+                </Typography>
+              </Box>
+            </Box>
+            <Switch
+              checked={voiceEnabled}
+              onChange={(e) => handleToggleVoice(e.target.checked)}
+              color="primary"
+            />
+          </Box>
+
           <Divider sx={{ my: 0.5 }} />
 
-          {/* Help & Rules */}
+          {/* 3. Save & Load Game Buttons */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            <CandyButton
+              fullWidth
+              variant="mint"
+              size="sm"
+              onClick={handleSaveMatch}
+            >
+              <SaveIcon sx={{ fontSize: 16, mr: 0.6 }} />
+              Save Match
+            </CandyButton>
+
+            <CandyButton
+              fullWidth
+              variant="azure"
+              size="sm"
+              disabled={!hasSavedMatch}
+              onClick={handleLoadMatch}
+            >
+              <FileDownloadIcon sx={{ fontSize: 16, mr: 0.6 }} />
+              Load Saved
+            </CandyButton>
+          </Box>
+
+          {hasSavedMatch && savedSummary && (
+            <Typography variant="caption" sx={{ color: '#64748b', textAlign: 'center', fontSize: '10.5px', fontWeight: 600 }}>
+              Last saved: {savedSummary.date} • ₹{savedSummary.balance.toLocaleString()} • {savedSummary.propertiesCount} properties
+            </Typography>
+          )}
+
+          <Divider sx={{ my: 0.5 }} />
+
+          {/* 4. Help & Rules */}
           <CandyButton
             fullWidth
             variant="glass"
@@ -126,10 +291,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             }}
           >
             <MenuBookIcon sx={{ fontSize: 16, mr: 0.8 }} />
-            Help & Rules Guide
+            Vyapar Rulebook & Guide
           </CandyButton>
 
-          {/* Leave Match */}
+          {/* 5. Leave Match */}
           <CandyButton
             fullWidth
             variant="danger"
@@ -140,7 +305,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             Leave Match
           </CandyButton>
 
-          {/* Optional Logout */}
+          {/* 6. Optional Logout */}
           {onLogout && (
             <CandyButton
               fullWidth
@@ -157,14 +322,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2, pt: 1 }}>
+        <DialogActions sx={{ p: 1.5, pt: 0.5 }}>
           <CandyButton
             fullWidth
             variant="primary"
             size="lg"
             onClick={onClose}
           >
-            Resume Game
+            Resume Match
           </CandyButton>
         </DialogActions>
       </Dialog>
@@ -189,7 +354,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: '#475569', fontWeight: 550, fontSize: '13px' }}>
-            Are you sure you want to exit to the Main Menu? Your active game progress will be forfeited.
+            Are you sure you want to exit to the Main Menu? You can save your match first using the Save Match button.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
@@ -209,7 +374,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               onLeaveGame();
             }}
           >
-            Yes, Leave Game
+            Yes, Leave Match
           </CandyButton>
         </DialogActions>
       </Dialog>

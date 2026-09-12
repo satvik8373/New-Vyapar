@@ -232,6 +232,16 @@ export const App: React.FC = () => {
     setCurrentScreen('GAME');
   };
 
+  const handleResumeSavedGame = () => {
+    setRoomCode('');
+    FirebaseMultiplayerAdapter.getInstance()?.destroy();
+    GameEngine.getInstance().setMultiplayerAdapter(null);
+    const success = GameEngine.getInstance().loadGame();
+    if (success) {
+      setCurrentScreen('GAME');
+    }
+  };
+
   const handleCreateSuccess = (code: string) => {
     setRoomCode(code);
     setCurrentScreen('LOBBY');
@@ -358,6 +368,7 @@ export const App: React.FC = () => {
                 userLevel={userLevel}
                 userRankTitle={userRankTitle}
                 onPlayVsComputer={() => setAiModalOpen(true)}
+                onResumeSavedGame={handleResumeSavedGame}
                 onCreateRoom={handleCreateRoom}
                 onJoinRoom={handleJoinRoom}
                 onOpenProfile={() => setProfileOpen(true)}

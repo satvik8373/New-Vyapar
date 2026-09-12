@@ -9,29 +9,33 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* 4-Corner Positions — tucked safely inside corners and device safe areas (notch / camera cutout protection) */
-.minimal-hud-wrapper.pos-top-left     { top: max(12px, calc(env(safe-area-inset-top) + 8px)); left: max(16px, calc(env(safe-area-inset-left) + 12px)); }
-.minimal-hud-wrapper.pos-top-right    { top: max(12px, calc(env(safe-area-inset-top) + 8px)); right: max(16px, calc(env(safe-area-inset-right) + 12px)); }
-.minimal-hud-wrapper.pos-bottom-left  { bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px)); left: max(16px, calc(env(safe-area-inset-left) + 12px)); }
-.minimal-hud-wrapper.pos-bottom-right { bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px)); right: max(16px, calc(env(safe-area-inset-right) + 12px)); }
+/* 4-Corner Positions — framed at a balanced, proportional distance around the board shoulders */
+.minimal-hud-wrapper.pos-top-left     { top: max(12px, calc(env(safe-area-inset-top) + 8px)); left: max(16px, calc(50% - 570px)); }
+.minimal-hud-wrapper.pos-top-right    { top: max(12px, calc(env(safe-area-inset-top) + 8px)); right: max(16px, calc(50% - 570px)); }
+.minimal-hud-wrapper.pos-bottom-left  { bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px)); left: max(16px, calc(50% - 570px)); }
+.minimal-hud-wrapper.pos-bottom-right { bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px)); right: max(16px, calc(50% - 570px)); }
 
-/* 1. HUD Chip — Compact, Balanced 2-Row Corner Card */
+/* 1. HUD Chip — Fixed-dimension, rock-solid 2-Row Corner Card (Zero resizing or flickering) */
 .minimal-hud-chip {
   display: flex;
   align-items: center;
   flex-direction: row;
   gap: 7px;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #e2e8f0;
   border-radius: 12px;
   padding: 5px 8px 5px 6px;
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07);
   box-sizing: border-box;
-  width: auto;
-  min-width: 140px;
-  max-width: 200px;
+  width: 176px;
+  min-width: 176px;
+  max-width: 176px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
   white-space: nowrap;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
 }
 
 .minimal-hud-chip:hover {
@@ -39,8 +43,8 @@
 }
 
 .minimal-hud-chip.is-turn {
-  border: 1.5px solid var(--player-accent, #0f172a);
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1);
+  border-color: var(--player-accent, #0f172a);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1), 0 0 0 1px var(--player-accent, #0f172a);
 }
 
 .minimal-hud-chip.is-bankrupt {
@@ -53,6 +57,8 @@
   position: relative;
   width: 28px;
   height: 28px;
+  min-width: 28px;
+  min-height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -100,45 +106,7 @@
   color: #0f172a;
 }
 
-/* Subtle, Executive 3-Bar Equalizer */
-.voice-bars {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 1.5px;
-  height: 9px;
-  padding: 0 1px;
-}
 
-.voice-bars .v-bar {
-  width: 2px;
-  background-color: #0f172a;
-  border-radius: 1px;
-  animation: voice-bar-bounce 0.85s infinite ease-in-out;
-}
-
-.voice-bars .v-bar:nth-child(1) {
-  height: 4px;
-  animation-delay: 0s;
-}
-
-.voice-bars .v-bar:nth-child(2) {
-  height: 8px;
-  animation-delay: 0.2s;
-}
-
-.voice-bars .v-bar:nth-child(3) {
-  height: 5px;
-  animation-delay: 0.4s;
-}
-
-@keyframes voice-bar-bounce {
-  0%, 100% {
-    transform: scaleY(0.4);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
 
 /* ══════════════════════════════════════════════════════════════════════════
    BALANCED 2-ROW HUD CONTENT STACK (Top: Identity | Bottom: Wealth & Actions)
@@ -203,12 +171,6 @@
   flex-shrink: 0;
 }
 
-.hud-role-tag.ai {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-}
-
 .hud-wealth-group {
   display: flex;
   align-items: center;
@@ -233,94 +195,55 @@
   flex-shrink: 0;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   REAL NETWORK SIGNAL LINES (Ascending Cellular Bars — NO DOT)
-   ══════════════════════════════════════════════════════════════════════════ */
-.hud-network-signal {
+.hud-turn-timer {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 1.5px 4px;
-  border-radius: 4px;
-  line-height: 1;
-  flex-shrink: 0;
-  border: 1px solid transparent;
-}
-
-.hud-network-signal .signal-bars {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 1.5px;
-  height: 9px;
-  flex-shrink: 0;
-}
-
-.hud-network-signal .sig-bar {
-  width: 2px;
-  border-radius: 0.5px;
-  background-color: #cbd5e1;
-}
-
-.hud-network-signal .sig-bar.bar-1 { height: 3.5px; }
-.hud-network-signal .sig-bar.bar-2 { height: 6px; }
-.hud-network-signal .sig-bar.bar-3 { height: 9px; }
-
-.hud-network-signal .ping-num {
-  font-size: 8px;
-  font-weight: 850;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-/* Quality Colors */
-.hud-network-signal.signal-good {
-  border-color: #dcfce7;
-  background: #f0fdf4;
-}
-.hud-network-signal.signal-good .sig-bar { background-color: #16a34a; }
-.hud-network-signal.signal-good .ping-num { color: #15803d; }
-
-.hud-network-signal.signal-fair {
-  border-color: #fef9c3;
-  background: #fefce8;
-}
-.hud-network-signal.signal-fair .sig-bar.bar-1,
-.hud-network-signal.signal-fair .sig-bar.bar-2 { background-color: #d97706; }
-.hud-network-signal.signal-fair .sig-bar.bar-3 { background-color: #e2e8f0; }
-.hud-network-signal.signal-fair .ping-num { color: #a16207; }
-
-.hud-network-signal.signal-poor {
-  border-color: #fee2e2;
-  background: #fef2f2;
-}
-.hud-network-signal.signal-poor .sig-bar.bar-1 { background-color: #dc2626; }
-.hud-network-signal.signal-poor .sig-bar.bar-2,
-.hud-network-signal.signal-poor .sig-bar.bar-3 { background-color: #e2e8f0; }
-.hud-network-signal.signal-poor .ping-num { color: #b91c1c; }
-
-.hud-turn-timer {
+  justify-content: center;
   font-size: 8.5px;
   font-weight: 800;
   color: #0f172a;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  border-radius: 3px;
-  padding: 1px 4.5px;
+  border-radius: 3.5px;
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  height: 15px;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.1px;
   line-height: 1;
   flex-shrink: 0;
+  box-sizing: border-box;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
 }
 
-/* Property Deeds Count Button */
+.hud-turn-timer.is-idle {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hud-turn-timer.is-active {
+  visibility: visible;
+  opacity: 1;
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Property Deeds Count Button — Constant width prevents sizing pop */
 .hud-card-icon-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 2.5px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 3.5px;
-  padding: 1.5px 3.5px;
+  min-width: 27px;
+  height: 19px;
+  padding: 0 3px;
+  box-sizing: border-box;
   cursor: pointer;
   color: #475569;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
@@ -344,18 +267,24 @@
   font-weight: 800;
   color: #0f172a;
   background: #e2e8f0;
-  padding: 0.5px 2.5px;
+  padding: 0 2.5px;
   border-radius: 2px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  min-width: 8px;
+  text-align: center;
+}
+
+.hud-card-badge.is-zero {
+  opacity: 0.55;
 }
 
 .hud-card-icon-btn.is-empty {
-  opacity: 0.35;
+  opacity: 0.5;
   cursor: default;
   color: #94a3b8;
   background: transparent;
-  border-color: transparent;
+  border-color: #e2e8f0;
 }
 
 /* Action Button */
@@ -364,15 +293,18 @@
   border: 1px solid #e2e8f0;
   border-radius: 3.5px;
   width: 19px;
+  min-width: 19px;
   height: 19px;
+  min-height: 19px;
   color: #475569;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
   flex-shrink: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 .hud-action-btn:hover {
@@ -516,372 +448,39 @@
   justify-content: center;
 }
 
-/* ==========================================================================
-   4. PING & MATCH STATUS BAR (top-center, floats above board)
-   ========================================================================== */
-.bottom-match-ping-bar {
-  display: none !important;
-}
-
-.bottom-match-ping-bar .ping-text {
-  color: #059669;
-  font-weight: 850;
-  flex-shrink: 0;
-}
-
-.bottom-match-ping-bar .latest-log-pill {
-  color: #1e293b;
-  font-weight: 750;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.bottom-match-ping-bar .version-text {
-  color: #94a3b8;
-  font-size: 9px;
-  flex-shrink: 0;
-}
-
-/* ==========================================================================
-   5. OPPONENT STRATEGIC INTELLIGENCE POPOVER
-   ========================================================================== */
-.opponent-property-popover {
-  position: absolute;
-  z-index: 150;
-  /* On desktop: 290px. On mobile: use as much viewport width as available
-     minus the HUD chip's own left offset (6px corner + chip ~130px max = ~140px)
-     so it never bleeds off either edge. */
-  width: clamp(220px, min(290px, calc(100vw - 28px)), 320px);
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  box-shadow:
-    0 16px 36px -6px rgba(15, 23, 42, 0.22),
-    0 4px 12px rgba(15, 23, 42, 0.08);
-  padding: 10px 12px;
-  box-sizing: border-box;
-  user-select: none;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  animation: popoverFadeIn 0.16s ease-out;
-}
-
-@keyframes popoverFadeIn {
-  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-/* ── Docking — keeps the popover within the viewport on all screen sizes ── */
-
-/* Top-left HUD: popover opens below, anchored to left edge of HUD chip */
-.opponent-property-popover.popover-top-left {
-  top: calc(100% + 6px);
-  left: 0;
-  /* never bleed off the right side */
-  max-width: calc(100vw - 12px);
-}
-
-/* Top-right HUD: popover opens below, anchored to right edge — shift left if needed */
-.opponent-property-popover.popover-top-right {
-  top: calc(100% + 6px);
-  right: 0;
-  /* never bleed off the left side */
-  max-width: calc(100vw - 12px);
-}
-
-/* Bottom-left HUD: popover opens above, anchored to left edge */
-.opponent-property-popover.popover-bottom-left {
-  bottom: calc(100% + 6px);
-  left: 0;
-  max-width: calc(100vw - 12px);
-}
-
-/* Bottom-right HUD: popover opens above, anchored to right edge */
-.opponent-property-popover.popover-bottom-right {
-  bottom: calc(100% + 6px);
-  right: 0;
-  max-width: calc(100vw - 12px);
-}
-
-/* Mobile portrait: further tighten */
-@media (max-width: 768px) {
-  .opponent-property-popover {
-    width: min(260px, calc(100vw - 20px));
-    padding: 8px 10px;
-    border-radius: 10px;
-  }
-
-  /* On very small screens left-anchored popovers that would push off-screen
-     get repositioned via JS click-outside logic, but CSS safety net: */
-  .opponent-property-popover.popover-top-left,
-  .opponent-property-popover.popover-bottom-left {
-    left: 0;
-    right: auto;
-  }
-
-  .opponent-property-popover.popover-top-right,
-  .opponent-property-popover.popover-bottom-right {
-    right: 0;
-    left: auto;
-  }
-
-  .opponent-popover-list {
-    max-height: 130px;
-  }
-}
-
-/* Header Row */
-.opponent-popover-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 7px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.opponent-popover-title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.opponent-popover-title {
-  font-size: 11.5px;
-  font-weight: 850;
-  color: #0f172a;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
-}
-
-.opponent-popover-count {
-  font-size: 9px;
-  font-weight: 800;
-  background: #f1f5f9;
-  color: #475569;
-  padding: 1px 5px;
-  border-radius: 4px;
-}
-
-.opponent-popover-close-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.12s ease;
-}
-
-.opponent-popover-close-btn:hover {
-  background: #0f172a;
-  color: #ffffff;
-  border-color: #0f172a;
-}
-
-/* Strategic Metrics Strip */
-.opponent-popover-intel-strip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.intel-metric {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.intel-metric-label {
-  font-size: 7.5px;
-  font-weight: 800;
-  color: #64748b;
-  letter-spacing: 0.4px;
-}
-
-.intel-metric-val {
-  font-size: 11.5px;
-  font-weight: 900;
-  color: #047857;
-  font-variant-numeric: tabular-nums;
-}
-
-.intel-metric-val.font-rose {
-  color: #e11d48;
-}
-
-/* Monopoly Threat Alert */
-.opponent-monopoly-alert {
-  margin: 6px 0 4px;
-  padding: 4px 7px;
-  border-radius: 5px;
-  font-size: 9.5px;
-  font-weight: 750;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  line-height: 1.3;
-}
-
-.opponent-monopoly-alert.active {
-  background: #fef2f2;
-  border: 1px solid #fecdd3;
-  color: #be123c;
-}
-
-.opponent-monopoly-alert.near {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  color: #b45309;
-}
-
-.monopoly-fire-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #e11d48;
-  flex-shrink: 0;
-}
-
-/* Property Items List */
-.opponent-popover-list {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  max-height: 170px;
-  overflow-y: auto;
-  padding: 4px 0;
-  margin: 4px 0;
-}
-
-.opponent-popover-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.opponent-popover-list::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 2px;
-}
-
-.opponent-prop-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 3.5px 6px;
-  border-radius: 5px;
-  background: #f8fafc;
-  border: 1px solid transparent;
-  transition: all 0.12s ease;
-  cursor: pointer;
-}
-
-.opponent-prop-row:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
-.opponent-prop-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.opponent-prop-info {
-  flex: 1;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  min-width: 0;
-}
-
-.opponent-prop-name {
-  font-size: 11px;
-  font-weight: 800;
-  color: #0f172a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.opponent-prop-guj {
-  font-size: 9px;
-  color: #64748b;
-  font-weight: 600;
-}
-
-.opponent-prop-rent {
-  font-size: 10.5px;
-  font-weight: 850;
-  color: #047857;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-/* Trade Button */
-.opponent-popover-trade-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 6px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: #0f172a;
-  color: #ffffff;
-  border: 1px solid #0f172a;
-  font-size: 11px;
-  font-weight: 850;
-  cursor: pointer;
-  letter-spacing: 0.2px;
-  transition: all 0.15s ease;
-}
-
-.opponent-popover-trade-btn:hover {
-  background: #1e293b;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-  transform: translateY(-1px);
-}
 
 /* ==========================================================================
    RESPONSIVE MEDIA QUERIES
    ========================================================================== */
 
-/* Desktop Screens (≥ 1024px width and ≥ 600px height) */
 @media (min-width: 1024px) and (min-height: 600px) {
-  .minimal-hud-wrapper.pos-top-left     { top: 12px; left: 12px; }
-  .minimal-hud-wrapper.pos-top-right    { top: 12px; right: 12px; }
-  .minimal-hud-wrapper.pos-bottom-left  { bottom: 12px; left: 12px; }
-  .minimal-hud-wrapper.pos-bottom-right { bottom: 12px; right: 12px; }
+  .minimal-hud-wrapper.pos-top-left     { top: 12px; left: max(16px, calc(50% - 570px)); }
+  .minimal-hud-wrapper.pos-top-right    { top: 12px; right: max(16px, calc(50% - 570px)); }
+  .minimal-hud-wrapper.pos-bottom-left  { bottom: 12px; left: max(16px, calc(50% - 570px)); }
+  .minimal-hud-wrapper.pos-bottom-right { bottom: 12px; right: max(16px, calc(50% - 570px)); }
 
   .minimal-hud-chip {
-    padding: 6px 10px 6px 8px;
+    width: 182px;
+    min-width: 182px;
+    max-width: 182px;
+    height: 50px;
+    min-height: 50px;
+    max-height: 50px;
+    padding: 6px 9px 6px 7px;
     gap: 8px;
     border-radius: 12px;
-    min-width: 150px;
-    max-width: 215px;
   }
 
-  .hud-avatar-wrapper { width: 30px; height: 30px; }
+  .hud-avatar-wrapper { width: 30px; height: 30px; min-width: 30px; min-height: 30px; }
   .hud-identity-group { gap: 3.5px; }
-  .hud-player-name { font-size: 11.5px; max-width: 95px; }
+  .hud-player-name { font-size: 11.5px; max-width: 88px; }
   .hud-role-tag { font-size: 8px; padding: 1.5px 5px; }
-  .hud-turn-timer { font-size: 8.5px; padding: 1.5px 4.5px; }
+  .hud-turn-timer { width: 30px; min-width: 30px; max-width: 30px; height: 16px; font-size: 9px; }
   .hud-wealth-group { gap: 3px; }
-  .hud-balance-val { font-size: 12.5px; }
-  .hud-card-icon-btn { padding: 2.5px 5px; }
+  .hud-balance-val { font-size: 12px; }
+  .hud-card-icon-btn { min-width: 29px; height: 21px; padding: 0 4px; }
   .hud-card-badge { font-size: 8.5px; }
-  .hud-action-btn { width: 23px; height: 23px; }
-  .hud-network-signal { padding: 1.5px 4px; gap: 3px; }
+  .hud-action-btn { width: 21px; min-width: 21px; height: 21px; min-height: 21px; }
 }
 
 /* Tablets (769px – 1099px) */
@@ -892,16 +491,23 @@
   .minimal-hud-wrapper.pos-bottom-right { bottom: max(10px, calc(env(safe-area-inset-bottom) + 8px)); right: max(16px, calc(env(safe-area-inset-right) + 10px)); }
 
   .minimal-hud-chip {
+    width: 168px;
+    min-width: 168px;
+    max-width: 168px;
+    height: 46px;
+    min-height: 46px;
+    max-height: 46px;
     padding: 5px 8px 5px 6px;
     gap: 6px;
     border-radius: 11px;
-    min-width: 140px;
-    max-width: 195px;
   }
 
-  .hud-avatar-wrapper { width: 26px; height: 26px; }
-  .hud-player-name { font-size: 10.5px; max-width: 80px; }
-  .hud-balance-val { font-size: 11.5px; }
+  .hud-avatar-wrapper { width: 26px; height: 26px; min-width: 26px; min-height: 26px; }
+  .hud-player-name { font-size: 10.5px; max-width: 76px; }
+  .hud-turn-timer { width: 26px; min-width: 26px; max-width: 26px; height: 15px; font-size: 8px; }
+  .hud-balance-val { font-size: 11px; }
+  .hud-card-icon-btn { min-width: 26px; height: 19px; }
+  .hud-action-btn { width: 19px; min-width: 19px; height: 19px; min-height: 19px; }
 }
 
 /* Mobile Portrait (≤ 768px) */
@@ -912,14 +518,19 @@
   .minimal-hud-wrapper.pos-bottom-right { bottom: max(60px, calc(env(safe-area-inset-bottom) + 56px)); right: max(12px, calc(env(safe-area-inset-right) + 8px)); }
 
   .minimal-hud-chip {
-    max-width: calc(50vw - 12px);
+    width: 148px;
+    min-width: 148px;
+    max-width: 148px;
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
     padding: 4px 6px 4px 5px;
     gap: 5px;
     border-radius: 10px;
     overflow: hidden;
   }
 
-  .hud-avatar-wrapper { width: 24px; height: 24px; }
+  .hud-avatar-wrapper { width: 24px; height: 24px; min-width: 24px; min-height: 24px; }
 
   .hud-identity-group {
     min-width: 0;
@@ -935,29 +546,11 @@
     text-overflow: ellipsis;
   }
 
-  .hud-balance-val { font-size: 10.5px; }
-
-  .hud-card-icon-btn {
-    padding: 2px 3.5px;
-    border-radius: 3px;
-  }
-
-  .hud-card-badge { font-size: 8px; padding: 0 2px; }
-  .hud-action-btn { width: 19px; height: 19px; }
-  .hud-network-signal { padding: 1px 2.5px; gap: 2px; }
-  .hud-network-signal .ping-num { font-size: 7.5px; }
-
-  /* Ping bar: stays near top-center but can't be wider than the gap between HUDs */
-  .bottom-match-ping-bar {
-    top: 6px;
-    font-size: 9px;
-    padding: 2px 10px;
-    gap: 6px;
-    max-width: calc(100vw - 200px);
-  }
-
-  .bottom-match-ping-bar .latest-log-pill { display: none; }
-  .bottom-match-ping-bar .version-text    { display: none; }
+  .hud-turn-timer { width: 24px; min-width: 24px; max-width: 24px; height: 14px; font-size: 7.5px; }
+  .hud-balance-val { font-size: 10px; }
+  .hud-card-icon-btn { min-width: 23px; height: 17px; padding: 0 2.5px; }
+  .hud-card-badge { font-size: 7.5px; padding: 0 2px; }
+  .hud-action-btn { width: 17px; min-width: 17px; height: 17px; min-height: 17px; }
 }
 
 /* Mobile Landscape / Short Screens (max-height ≤ 540px) */
@@ -969,13 +562,18 @@
   .minimal-hud-wrapper.pos-bottom-right { bottom: max(8px, calc(env(safe-area-inset-bottom) + 4px)); right: max(22px, calc(env(safe-area-inset-right) + 14px)); }
 
   .minimal-hud-chip {
-    max-width: 170px;
-    padding: 3px 6px 3px 5px;
-    gap: 5px;
+    width: 142px;
+    min-width: 142px;
+    max-width: 142px;
+    height: 38px;
+    min-height: 38px;
+    max-height: 38px;
+    padding: 3px 5px 3px 4px;
+    gap: 4px;
     border-radius: 9px;
   }
 
-  .hud-avatar-wrapper { width: 22px; height: 22px; }
+  .hud-avatar-wrapper { width: 22px; height: 22px; min-width: 22px; min-height: 22px; }
 
   .hud-identity-group {
     min-width: 0;
@@ -984,36 +582,11 @@
     overflow: hidden;
   }
 
-  .hud-player-name { font-size: 9px; max-width: 55px; }
-  .hud-balance-val { font-size: 10px; }
-  .hud-action-btn  { width: 18px; height: 18px; }
-
-  /* Opponent intelligence popover neatly fits in side margin without covering board */
-  .opponent-property-popover {
-    width: min(235px, calc(50vw - 16px));
-    max-height: min(270px, calc(100vh - 20px));
-    padding: 7px 9px;
-    border-radius: 8px;
-  }
-
-  .opponent-popover-list {
-    max-height: 95px;
-    padding: 2px 0;
-  }
-
-  .opponent-popover-intel-strip {
-    padding: 4px 0;
-  }
-
-  .bottom-match-ping-bar {
-    top: 4px;
-    font-size: 8.5px;
-    padding: 1.5px 8px;
-    max-width: calc(100vw - 220px);
-  }
-
-  .bottom-match-ping-bar .latest-log-pill { display: none; }
-  .bottom-match-ping-bar .version-text    { display: none; }
+  .hud-player-name { font-size: 9px; max-width: 56px; }
+  .hud-turn-timer { width: 22px; min-width: 22px; max-width: 22px; height: 13px; font-size: 7px; }
+  .hud-balance-val { font-size: 9.5px; }
+  .hud-card-icon-btn { min-width: 21px; height: 16px; }
+  .hud-action-btn  { width: 16px; min-width: 16px; height: 16px; min-height: 16px; }
 }
 
 

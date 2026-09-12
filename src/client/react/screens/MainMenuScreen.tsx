@@ -14,8 +14,10 @@ import { AppCard, AppButton, AppBadge } from '../components/common';
 
 import LogoutIcon from '@mui/icons-material/Logout';
 import InstallMobileIcon from '@mui/icons-material/InstallMobile';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import Tooltip from '@mui/material/Tooltip';
 import { usePWAInstall } from '../utils/usePWAInstall';
+import { GameEngine } from '../../game-engine/GameEngine';
 
 interface MainMenuScreenProps {
   userName: string;
@@ -25,6 +27,7 @@ interface MainMenuScreenProps {
   userLevel?: number;
   userRankTitle?: string;
   onPlayVsComputer: () => void;
+  onResumeSavedGame?: () => void;
   onCreateRoom: () => void;
   onJoinRoom: () => void;
   onOpenProfile: () => void;
@@ -42,6 +45,7 @@ export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({
   userLevel = 1,
   userRankTitle = 'Novice Trader',
   onPlayVsComputer,
+  onResumeSavedGame,
   onCreateRoom,
   onJoinRoom,
   onOpenProfile,
@@ -51,6 +55,7 @@ export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({
   onLogout
 }) => {
   const { canInstall, installApp } = usePWAInstall();
+  const savedSummary = GameEngine.getInstance().getSavedGameSummary();
 
   return (
     <Box
@@ -276,6 +281,36 @@ export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({
 
         {/* Action Buttons */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.2, md: 1.5 } }}>
+          {savedSummary && onResumeSavedGame && (
+            <AppButton
+              fullWidth
+              variant="secondary"
+              size="large"
+              startIcon={<PlayArrowIcon sx={{ fontSize: { xs: 20, sm: 24, md: 26 }, color: '#059669' }} />}
+              onClick={onResumeSavedGame}
+              sx={{
+                py: { xs: 1.1, sm: 1.3, md: 1.6 },
+                fontSize: { xs: '13.5px', sm: '15px', md: '16.5px' },
+                fontWeight: 900,
+                letterSpacing: '0.2px',
+                border: '2px solid #10b981',
+                backgroundColor: '#ecfdf5',
+                color: '#065f46',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.2)',
+                '&:hover': {
+                  backgroundColor: '#d1fae5',
+                  borderColor: '#059669'
+                },
+                '@media (max-height: 500px)': {
+                  py: 0.8,
+                  fontSize: '13px'
+                }
+              }}
+            >
+              RESUME SAVED MATCH (₹{savedSummary.balance.toLocaleString()})
+            </AppButton>
+          )}
+
           <AppButton
             fullWidth
             variant="primary"

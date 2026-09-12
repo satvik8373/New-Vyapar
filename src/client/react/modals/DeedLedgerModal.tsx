@@ -24,12 +24,13 @@ interface DeedLedgerModalProps {
 }
 
 const COLOR_GROUPS = [
-  { id: 'orange', name: 'Saurashtra Coast', hex: '#ea580c' },
-  { id: 'blue',   name: 'Kutch Ports',      hex: '#0284c7' },
-  { id: 'green',  name: 'Pilgrim Cities',   hex: '#059669' },
-  { id: 'yellow', name: 'Central Heritage', hex: '#d97706' },
-  { id: 'red',    name: 'Industrial Hubs',  hex: '#e11d48' },
-  { id: 'pink',   name: 'Textile Arteries', hex: '#8b5cf6' }
+  { id: 'teal',   name: 'Sacred Heritage',           hex: '#0d9488' },
+  { id: 'blue',   name: 'Pilgrimage Corridor',       hex: '#0284c7' },
+  { id: 'purple', name: 'Saurashtra Hubs',           hex: '#8b5cf6' },
+  { id: 'orange', name: 'North & Central Commerce',  hex: '#ea580c' },
+  { id: 'red',    name: 'Royal & Metropolis',        hex: '#e11d48' },
+  { id: 'yellow', name: 'Mega Landmarks & Crafts',   hex: '#d97706' },
+  { id: 'green',  name: 'Modern Mega Commercial',    hex: '#059669' }
 ];
 
 export const DeedLedgerModal: React.FC<DeedLedgerModalProps> = ({ open, onClose }) => {
@@ -77,7 +78,7 @@ export const DeedLedgerModal: React.FC<DeedLedgerModalProps> = ({ open, onClose 
             STATE PROPERTY DEED LEDGER
           </Typography>
           <Typography sx={{ fontSize: '12px', color: '#64748b', fontWeight: 550, mt: 0.2 }}>
-            Master Ownership & Rent Schedule for all 28 Gujarat Commercial Properties
+            Master Ownership & Rent Schedule for all 24 Gujarat Commercial Properties & Seaports
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -124,7 +125,7 @@ export const DeedLedgerModal: React.FC<DeedLedgerModalProps> = ({ open, onClose 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {COLOR_GROUPS.map((group) => {
             const groupTiles: BoardTileStep[] = BOARD_TILES.filter(
-              (t) => t.color === group.id && (t.type === 'PROPERTY' || t.type === 'PORT')
+              (t) => t.color === group.id && t.type === 'PROPERTY'
             );
             if (groupTiles.length === 0) return null;
 
@@ -275,6 +276,140 @@ export const DeedLedgerModal: React.FC<DeedLedgerModalProps> = ({ open, onClose 
               </Box>
             );
           })}
+
+          {/* Maritime Seaports Section */}
+          {(() => {
+            const portTiles = BOARD_TILES.filter((t) => t.type === 'PORT');
+            if (portTiles.length === 0) return null;
+            return (
+              <Box
+                sx={{
+                  border: '1px solid rgba(226, 232, 240, 0.9)',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    backgroundColor: '#1e293b',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: 850,
+                        fontSize: '12.5px',
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif'
+                      }}
+                    >
+                      ⚓ Maritime Seaports
+                    </Typography>
+                    <CandyPill variant="slate" size="xs">
+                      {portTiles.length} Ports
+                    </CandyPill>
+                  </Box>
+                  <Typography sx={{ fontSize: '10.5px', color: '#94a3b8', fontWeight: 600 }}>
+                    Rent doubles per port owned (1× / 2× / 4×)
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                    gap: 1.2
+                  }}
+                >
+                  {portTiles.map((tile) => {
+                    const owner = players.find((p) => p.ownedPropertyIds?.includes(tile.step));
+                    const isMortgaged = mortgagedProperties.includes(tile.step);
+                    const rent = engine.calculateRent(tile.step).amount;
+                    return (
+                      <Box
+                        key={tile.step}
+                        onClick={() => {
+                          onClose();
+                          engine.inspectProperty(tile.step);
+                        }}
+                        sx={{
+                          p: '10px 12px',
+                          borderRadius: '12px',
+                          border: owner ? `1.5px solid ${owner.tokenColor}55` : '1px solid rgba(226, 232, 240, 0.85)',
+                          backgroundColor: owner ? '#f8fafc' : '#ffffff',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 0.6,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 6px 16px rgba(0, 0, 0, 0.06)'
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography
+                            noWrap
+                            sx={{
+                              fontWeight: 800,
+                              fontSize: '12px',
+                              color: '#0f172a',
+                              fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif'
+                            }}
+                          >
+                            ⚓ {tile.name}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                            <CurrencyCoin size={12} />
+                            <Typography sx={{ fontWeight: 800, fontSize: '12px', color: '#0f172a' }}>
+                              {tile.price?.toLocaleString()}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography sx={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600 }}>
+                            Rent: ₹{rent.toLocaleString()}
+                          </Typography>
+                          {owner ? (
+                            <CandyPill
+                              variant="neutral"
+                              size="xs"
+                              style={{
+                                color: owner.tokenColor,
+                                fontWeight: 800,
+                                borderColor: `${owner.tokenColor}55`
+                              }}
+                            >
+                              {owner.name}
+                            </CandyPill>
+                          ) : (
+                            <CandyPill variant="mint" size="xs">
+                              Available
+                            </CandyPill>
+                          )}
+                        </Box>
+                        {isMortgaged && (
+                          <Typography sx={{ fontSize: '9.5px', fontWeight: 800, color: '#f43f5e' }}>
+                            Currently Mortgaged
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            );
+          })()}
         </Box>
         )}
       </DialogContent>

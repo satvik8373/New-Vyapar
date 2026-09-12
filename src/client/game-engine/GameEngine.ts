@@ -1,6 +1,14 @@
-import { BOARD_TILES, BoardTileStep, shuffleMatchTiles } from '@shared/game-data/boardData';
+import {
+  BOARD_TILES,
+  BoardTileStep,
+  shuffleMatchTiles,
+  getPropertyRentSchedule,
+  getHouseCostByStep,
+  PORT_RENT_SCHEDULE
+} from '@shared/game-data/boardData';
 import { PlayerData, TurnPhase } from '@shared/types/player';
 import { SoundEffects } from '../audio/SoundEffects';
+import { VoiceAnnouncer } from '../services/VoiceAnnouncer';
 
 export interface GameLogEntry {
   id: string;
@@ -74,8 +82,8 @@ export const CHANCE_CARDS: ChanceCard[] = [
   {
     id: 'c8',
     title: 'Express Trade Voyage',
-    description: 'Charter flight to Statue of Unity — advance to tile 23.',
-    moveToTile: 23,
+    description: 'Charter flight to Statue of Unity — advance to tile 22.',
+    moveToTile: 22,
     isReward: true
   },
   {
@@ -155,6 +163,15 @@ export interface AuctionState {
   currentBidderIndex: number;
 }
 
+export interface TradeProposal {
+  fromPlayerId: string;
+  toPlayerId: string;
+  offeredPropertySteps: number[];
+  offeredCash: number;
+  requestedPropertySteps: number[];
+  requestedCash: number;
+}
+
 export interface GameAnnouncement {
   id: string;
   type: 'rent' | 'tax' | 'salary' | 'jail' | 'buy' | 'loan' | 'chance' | 'info';
@@ -171,6 +188,7 @@ export interface GameAnnouncement {
   tileStep?: number;
   tileName?: string;
   tileColor?: string;
+  isImportant?: boolean; // Only true triggers spoken voice commentary
 }
 
 export interface GameEngineState {
@@ -191,6 +209,7 @@ export interface GameEngineState {
   bankLoanBalance: Record<string, number>;
   hoveredOwnerId: string | null;
   activeAnnouncement: GameAnnouncement | null;
+  isPaused?: boolean;
 }
 
 type Listener<T> = (val: T) => void;
@@ -467,9 +486,9 @@ export class GameEngine {
     this.state = {
       players: [
         makePlayer('p1', localPlayerName, 'crown',   '#e11d48', 0xe11d48, 'Ruby Crimson',   true),
-        makePlayer('p2', 'Computer 1 (AI)',  'bot', '#059669', 0x059669, 'Emerald Green', false),
-        makePlayer('p3', 'Computer 2 (AI)',  'bot', '#0284c7', 0x0284c7, 'Sapphire Blue', false),
-        makePlayer('p4', 'Computer 3 (AI)',  'bot', '#d97706', 0xd97706, 'Amber Gold',    false),
+        makePlayer('p2', 'Rajesh', 'businessman', '#059669', 0x059669, 'Emerald Green', false),
+        makePlayer('p3', 'Bhavna', 'businesswoman', '#0284c7', 0x0284c7, 'Sapphire Blue', false),
+        makePlayer('p4', 'Aarav',  'merchant',     '#d97706', 0xd97706, 'Amber Gold',    false),
       ],
       activePlayerIndex: 0,
       phase: 'PLAYER_TURN',
@@ -492,6 +511,7 @@ export class GameEngine {
       bankLoanBalance: {},
       hoveredOwnerId: null,
       activeAnnouncement: null,
+      isPaused: false,
     };
     this.emit();
   }
@@ -528,9 +548,9 @@ export class GameEngine {
     this.state = {
       players: [
         makePlayer('p1', 'Player 1', 'crown',   '#e11d48', 0xe11d48, 'Ruby Crimson',   true),
-        makePlayer('p2', 'Computer 1 (AI)',  'bot', '#059669', 0x059669, 'Emerald Green', false),
-        makePlayer('p3', 'Computer 2 (AI)',  'bot', '#0284c7', 0x0284c7, 'Sapphire Blue', false),
-        makePlayer('p4', 'Computer 3 (AI)',  'bot', '#d97706', 0xd97706, 'Amber Gold',    false),
+        makePlayer('p2', 'Rajesh', 'businessman', '#059669', 0x059669, 'Emerald Green', false),
+        makePlayer('p3', 'Bhavna', 'businesswoman', '#0284c7', 0x0284c7, 'Sapphire Blue', false),
+        makePlayer('p4', 'Aarav',  'merchant',     '#d97706', 0xd97706, 'Amber Gold',    false),
       ],
       activePlayerIndex: 0,
       phase: 'PLAYER_TURN',
@@ -553,6 +573,7 @@ export class GameEngine {
       bankLoanBalance: {},
       hoveredOwnerId: null,
       activeAnnouncement: null,
+      isPaused: false,
     };
   }
 
@@ -571,6 +592,13 @@ export class GameEngine {
     };
     this.state.activeAnnouncement = full;
     this.emit();
+
+    // Voice announcement commentary hook - strictly for important board milestones!
+    if (full.isImportant) {
+      try {
+        VoiceAnnouncer.getInstance().announce(`${full.title}. ${full.message}`);
+      } catch {}
+    }
 
     this.announcementTimer = setTimeout(() => {
       if (this.state.activeAnnouncement?.id === full.id) {
@@ -634,6 +662,45 @@ export class GameEngine {
     return this.state.players[this.state.activePlayerIndex];
   }
 
+  // ── PAUSE / RESUME SYSTEM ──────────────────────────────────────────────────
+  public pauseGame(): void {
+    if (this.state.isPaused) return;
+    this.state.isPaused = true;
+    if (this.turnTimer) {
+      clearTimeout(this.turnTimer);
+      this.turnTimer = null;
+    }
+    this.emit();
+  }
+
+  public resumeGame(): void {
+    if (!this.state.isPaused) return;
+    this.state.isPaused = false;
+    this.emit();
+
+    if (!this.mpAdapter?.isMultiplayerActive()) {
+      const active = this.getActivePlayer();
+      if (!active || active.isBankrupt) return;
+
+      if (this.state.auctionState) {
+        this.processBotBids();
+        return;
+      }
+
+      if (!active.isHuman) {
+        if (this.state.phase === 'PLAYER_TURN' && !this.state.diceState.rolling && !this.state.hoppingState) {
+          this.triggerBotTurn();
+        } else if (this.state.phase === 'RESOLVING') {
+          this.checkBotEndTurn(active);
+        }
+      }
+    }
+  }
+
+  public isGamePaused(): boolean {
+    return Boolean(this.state.isPaused);
+  }
+
   // ── JAIL ────────────────────────────────────────────────────────────────────
 
   public sendToJail(playerId: string): void {
@@ -651,6 +718,7 @@ export class GameEngine {
 
   /** Pay ₹500 to leave jail immediately — player then rolls this turn */
   public payJailFine(): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) {
       this.mpAdapter.payJailFine();
       return;
@@ -674,7 +742,8 @@ export class GameEngine {
       amount: JAIL_FINE,
       amountType: 'minus',
       playerName: active.name,
-      playerColor: active.tokenColor
+      playerColor: active.tokenColor,
+      isImportant: true
     });
     this.state.phase = 'PLAYER_TURN';
     this.emit();
@@ -682,6 +751,7 @@ export class GameEngine {
 
   /** Use a Get Out of Jail Free card */
   public useGetOutOfJailCard(): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) {
       this.mpAdapter.useJailCard();
       return;
@@ -699,7 +769,8 @@ export class GameEngine {
       title: 'OUT OF JAIL CARD',
       message: `${active.name} used a Get Out of Jail Card!`,
       playerName: active.name,
-      playerColor: active.tokenColor
+      playerColor: active.tokenColor,
+      isImportant: true
     });
     this.state.phase = 'PLAYER_TURN';
     this.emit();
@@ -708,6 +779,7 @@ export class GameEngine {
   // ── SINGLE DIE ROLL ─────────────────────────────────────────────────────────
 
   public requestRoll(forcedValue?: number): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) {
       this.mpAdapter.roll();
       return;
@@ -720,30 +792,82 @@ export class GameEngine {
     const active = this.getActivePlayer();
     if (!active || active.isBankrupt) return;
 
-    // If player is in jail — they miss the turn (skipped), jailTurns increments
+    // If player is in jail — they roll to attempt rolling a 6 to escape!
     if (active.isInJail) {
-      const newJailTurns = active.jailTurns + 1;
-      if (newJailTurns >= MAX_JAIL_TURNS) {
-        // Force-pay fine on 3rd turn and release
-        if (active.balance >= JAIL_FINE) {
-          this.updatePlayerBalance(active.id, -JAIL_FINE);
-          this.addLog(`${active.name} forced to pay ₹${JAIL_FINE} fine after ${MAX_JAIL_TURNS} turns in jail.`, 'jail');
+      const diceValue = forcedValue ?? (Math.floor(Math.random() * 6) + 1);
+      this.state.phase = 'ROLLING';
+      this.state.diceState = { rolling: true, value: null };
+      SoundEffects.getInstance().playDiceRoll();
+      this.emit();
+
+      setTimeout(() => {
+        this.state.diceState = { rolling: false, value: diceValue };
+        SoundEffects.getInstance().playDiceLand();
+        const newJailTurns = active.jailTurns + 1;
+
+        if (diceValue === 6) {
+          // 🎉 Escaped Jail for free!
+          this.state.players = this.state.players.map((p) =>
+            p.id === active.id ? { ...p, isInJail: false, jailTurns: 0 } : p
+          );
+          SoundEffects.getInstance().playPurchaseJingle();
+          this.addLog(`🎉 ${active.name} rolled a 6 and ESCAPED JAIL FOR FREE! Moving 6 steps.`, 'jail');
+          this.triggerAnnouncement({
+            type: 'jail',
+            title: '🎉 ESCAPED JAIL!',
+            message: `${active.name} rolled a 6 and escaped Central Jail!`,
+            playerName: active.name,
+            playerColor: active.tokenColor,
+            isImportant: true
+          }, 2400);
+          this.emit();
+
+          setTimeout(() => {
+            this.startHopSequence(active.id, active.currentTileIndex, 6);
+          }, 500);
+        } else if (newJailTurns >= MAX_JAIL_TURNS) {
+          // 3rd turn: Forced bail payout and release
+          const finePaid = Math.min(active.balance, JAIL_FINE);
+          this.updatePlayerBalance(active.id, -finePaid);
+          this.state.players = this.state.players.map((p) =>
+            p.id === active.id ? { ...p, isInJail: false, jailTurns: 0 } : p
+          );
+          SoundEffects.getInstance().playTaxDeduct();
+          this.addLog(`${active.name} rolled a ${diceValue}. Served ${MAX_JAIL_TURNS} turns in jail; paid ₹${finePaid} bail and was released. Moving ${diceValue} steps.`, 'jail');
+          this.triggerAnnouncement({
+            type: 'jail',
+            title: 'JAIL TIME SERVED',
+            message: `${active.name} served ${MAX_JAIL_TURNS} turns in jail, paid ₹${finePaid} bail, and was released!`,
+            amount: finePaid,
+            amountType: 'minus',
+            playerName: active.name,
+            playerColor: active.tokenColor
+          }, 2200);
+          this.emit();
+
+          setTimeout(() => {
+            this.startHopSequence(active.id, active.currentTileIndex, diceValue);
+          }, 500);
+        } else {
+          // Did not roll 6, remains in jail
+          this.state.players = this.state.players.map((p) =>
+            p.id === active.id ? { ...p, jailTurns: newJailTurns } : p
+          );
+          SoundEffects.getInstance().playClick();
+          this.addLog(`${active.name} rolled a ${diceValue} — did not roll a 6 to escape Jail (${newJailTurns}/${MAX_JAIL_TURNS}).`, 'jail');
+          this.triggerAnnouncement({
+            type: 'jail',
+            title: 'STILL IN JAIL',
+            message: `${active.name} rolled a ${diceValue} (needed 6 to escape). Turn ended.`,
+            playerName: active.name,
+            playerColor: active.tokenColor
+          }, 2000);
+          this.state.phase = 'RESOLVING';
+          this.emit();
+          this.checkBotEndTurn(active);
         }
-        this.state.players = this.state.players.map((p) =>
-          p.id === active.id ? { ...p, isInJail: false, jailTurns: 0 } : p
-        );
-        SoundEffects.getInstance().playTaxDeduct();
-        // Now roll normally
-      } else {
-        this.state.players = this.state.players.map((p) =>
-          p.id === active.id ? { ...p, jailTurns: newJailTurns } : p
-        );
-        this.addLog(`${active.name} is in Jail — turn skipped (${newJailTurns}/${MAX_JAIL_TURNS}). Pay ₹${JAIL_FINE} or use a card to escape.`, 'jail');
-        this.state.phase = 'RESOLVING';
-        this.emit();
-        this.checkBotEndTurn(active);
-        return;
-      }
+      }, 650);
+      return;
     }
 
     const diceValue = forcedValue ?? (Math.floor(Math.random() * 6) + 1);
@@ -776,6 +900,7 @@ export class GameEngine {
     SoundEffects.getInstance().startCarMoving();
 
     const hopInterval = setInterval(() => {
+      if (this.state.isPaused) return;
       currentStep = (currentStep + 1) % BOARD_SIZE;
       stepsLeft--;
       const stepIndex = totalSteps - stepsLeft;
@@ -868,7 +993,8 @@ export class GameEngine {
         title: 'POLICE DETAINMENT',
         message: `${player.name} was sent directly to Central Jail!`,
         playerName: player.name,
-        playerColor: player.tokenColor
+        playerColor: player.tokenColor,
+        isImportant: true
       });
       this.sendToJail(playerId);
       setTimeout(() => this.checkBotEndTurn(player), 1000);
@@ -989,9 +1115,9 @@ export class GameEngine {
         // Pay rent
         const rentDetails = this.calculateRent(tile.step);
         if (rentDetails.amount > 0) {
-          const actualPay = Math.min(rentDetails.amount, player.balance);
-          this.updatePlayerBalance(player.id, -actualPay);
-          this.updatePlayerBalance(owner.id, actualPay);
+          const rentOwed = rentDetails.amount;
+          this.updatePlayerBalance(player.id, -rentOwed);
+          this.updatePlayerBalance(owner.id, rentOwed);
 
           const isOwnerHuman = owner.isHuman;
           const isPlayerHuman = player.isHuman;
@@ -1005,10 +1131,10 @@ export class GameEngine {
 
           this.addLog(
             isOwnerHuman
-              ? `🎉 ${player.name} entered your ${tile.name} and paid you ₹${actualPay.toLocaleString()} rent (${rentDetails.tier})!`
+              ? `🎉 ${player.name} entered your ${tile.name} and paid you ₹${rentOwed.toLocaleString()} rent (${rentDetails.tier})!`
               : isPlayerHuman
-              ? `💸 You entered ${owner.name}'s ${tile.name} and paid ₹${actualPay.toLocaleString()} rent (${rentDetails.tier}).`
-              : `${player.name} paid ₹${actualPay.toLocaleString()} rent (${rentDetails.tier}) to ${owner.name} for ${tile.name}.`,
+              ? `💸 You entered ${owner.name}'s ${tile.name} and paid ₹${rentOwed.toLocaleString()} rent (${rentDetails.tier}).`
+              : `${player.name} paid ₹${rentOwed.toLocaleString()} rent (${rentDetails.tier}) to ${owner.name} for ${tile.name}.`,
             'rent'
           );
 
@@ -1018,7 +1144,7 @@ export class GameEngine {
               type: 'rent',
               title: '🎉 RENT COLLECTED!',
               message: `${player.name} entered your property (${tile.name}) and paid you rent!`,
-              amount: actualPay,
+              amount: rentOwed,
               amountType: 'plus',
               playerName: player.name,
               playerColor: player.tokenColor,
@@ -1032,8 +1158,8 @@ export class GameEngine {
             this.triggerAnnouncement({
               type: 'rent',
               title: 'RENT PAID',
-              message: `You entered ${owner.name}'s property (${tile.name}) and paid ₹${actualPay.toLocaleString()} rent.`,
-              amount: actualPay,
+              message: `You entered ${owner.name}'s property (${tile.name}) and paid ₹${rentOwed.toLocaleString()} rent.`,
+              amount: rentOwed,
               amountType: 'minus',
               playerName: player.name,
               playerColor: player.tokenColor,
@@ -1048,8 +1174,8 @@ export class GameEngine {
             this.triggerAnnouncement({
               type: 'rent',
               title: 'RENT TRANSACTION',
-              message: `${player.name} paid ₹${actualPay.toLocaleString()} rent to ${owner.name} for ${tile.name}.`,
-              amount: actualPay,
+              message: `${player.name} paid ₹${rentOwed.toLocaleString()} rent to ${owner.name} for ${tile.name}.`,
+              amount: rentOwed,
               amountType: 'minus',
               playerName: player.name,
               playerColor: player.tokenColor,
@@ -1061,7 +1187,13 @@ export class GameEngine {
             }, 2000);
           }
 
-          this.checkBankruptcy(player.id, owner.id);
+          const updatedDebtor = this.state.players.find((p) => p.id === player.id);
+          if (updatedDebtor && updatedDebtor.balance < 0) {
+            if (!updatedDebtor.isHuman) {
+              this.autoMortgageForAI(player.id);
+            }
+            this.checkBankruptcy(player.id, owner.id);
+          }
         } else {
           this.addLog(`${tile.name} is mortgaged — no rent for ${owner.name}.`, 'info');
           this.triggerAnnouncement({
@@ -1082,20 +1214,25 @@ export class GameEngine {
     // TAX
     if (tile.type === 'TAX') {
       const taxAmount = tile.step === 5 ? 500 : 800;
-      const actualPay = Math.min(taxAmount, player.balance);
-      this.updatePlayerBalance(player.id, -actualPay);
+      this.updatePlayerBalance(player.id, -taxAmount);
       SoundEffects.getInstance().playTaxDeduct();
-      this.addLog(`${player.name} paid ₹${actualPay.toLocaleString()} Gujarat Commercial Tax.`, 'tax');
+      this.addLog(`${player.name} paid ₹${taxAmount.toLocaleString()} Gujarat Commercial Tax.`, 'tax');
       this.triggerAnnouncement({
         type: 'tax',
         title: 'COMMERCIAL TAX PAID',
-        message: `${player.name} paid ₹${actualPay.toLocaleString()} State Duty & Tax.`,
-        amount: actualPay,
+        message: `${player.name} paid ₹${taxAmount.toLocaleString()} State Duty & Tax.`,
+        amount: taxAmount,
         amountType: 'minus',
         playerName: player.name,
         playerColor: player.tokenColor
       });
-      this.checkBankruptcy(player.id, null);
+      const updatedPlayer = this.state.players.find((p) => p.id === player.id);
+      if (updatedPlayer && updatedPlayer.balance < 0) {
+        if (!updatedPlayer.isHuman) {
+          this.autoMortgageForAI(player.id);
+        }
+        this.checkBankruptcy(player.id, null);
+      }
       this.state.phase = 'RESOLVING';
       this.emit();
       this.checkBotEndTurn(player);
@@ -1119,7 +1256,8 @@ export class GameEngine {
           title: 'CHANCE: GO TO JAIL',
           message: `${player.name} drew "${card.title}" and goes directly to Jail!`,
           playerName: player.name,
-          playerColor: player.tokenColor
+          playerColor: player.tokenColor,
+          isImportant: true
         }, 2600);
         this.state.activeChanceCard = null;
         setTimeout(() => {
@@ -1204,7 +1342,8 @@ export class GameEngine {
           amount: Math.abs(amt),
           amountType: amt > 0 ? 'plus' : 'minus',
           playerName: player.name,
-          playerColor: player.tokenColor
+          playerColor: player.tokenColor,
+          isImportant: Math.abs(amt) >= 500
         }, 2600);
 
         this.checkBankruptcy(player.id, null);
@@ -1259,7 +1398,28 @@ export class GameEngine {
       return;
     }
 
-    // Default (START, SPECIAL, etc.)
+    // GOLD RESERVE — collects sovereign gold royalty ₹500
+    if (tile.type === 'SPECIAL') {
+      const goldBonus = 500;
+      this.updatePlayerBalance(player.id, goldBonus);
+      SoundEffects.getInstance().playMoneyChime();
+      this.addLog(`👑 ${player.name} visited State Gold Reserve and collected ₹${goldBonus.toLocaleString()} Sovereign Bullion Dividend!`, 'info');
+      this.triggerAnnouncement({
+        type: 'info',
+        title: '👑 GOLD RESERVE DIVIDEND',
+        message: `${player.name} received ₹${goldBonus.toLocaleString()} State Gold Bullion Dividend!`,
+        amount: goldBonus,
+        amountType: 'plus',
+        playerName: player.name,
+        playerColor: player.tokenColor
+      }, 2500);
+      this.state.phase = 'RESOLVING';
+      this.emit();
+      this.checkBotEndTurn(player);
+      return;
+    }
+
+    // Default (START, JAIL, FREE PARKING, etc.)
     this.state.phase = 'RESOLVING';
     this.emit();
     this.checkBotEndTurn(player);
@@ -1293,6 +1453,7 @@ export class GameEngine {
   }
 
   private processBotBids(): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) return;
     const auction = this.state.auctionState;
     if (!auction) return;
@@ -1306,6 +1467,7 @@ export class GameEngine {
     const delay = this.aiDifficulty === 'HARD' ? 700 : this.aiDifficulty === 'MEDIUM' ? 1200 : 1600;
 
     setTimeout(() => {
+      if (this.state.isPaused) return;
       if (!this.state.auctionState) return;
       let multiplier = 0.8;
       if (this.aiDifficulty === 'EASY') multiplier = 0.5;
@@ -1434,6 +1596,7 @@ export class GameEngine {
   // ── BUY & PASS ──────────────────────────────────────────────────────────────
 
   public buyProperty(step: number, isBot = false): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) {
       this.mpAdapter.buyProperty();
       return;
@@ -1475,7 +1638,7 @@ export class GameEngine {
 
     // Check if monopoly set completed
     if (tile.color) {
-      const groupTiles = BOARD_TILES.filter((t) => t.color === tile.color && (t.type === 'PROPERTY' || t.type === 'PORT'));
+      const groupTiles = BOARD_TILES.filter((t) => t.color === tile.color && t.type === 'PROPERTY');
       const fullGroupOwned = groupTiles.every((t) => updatedOwned.includes(t.step));
       const prevOwnedCount = groupTiles.filter((t) => active.ownedPropertyIds?.includes(t.step)).length;
       if (fullGroupOwned && prevOwnedCount === groupTiles.length - 1) {
@@ -1571,6 +1734,7 @@ export class GameEngine {
 
   /** Player declines → property remains with bank */
   public passProperty(isBot = false): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) {
       this.mpAdapter.passProperty();
       return;
@@ -1618,36 +1782,44 @@ export class GameEngine {
     }
 
     const owner = this.state.players.find((p) => p.ownedPropertyIds?.includes(step));
-    const houses  = this.state.propertyHouses[step] || 0;
-    const baseRent = Math.round(tile.price * 0.1);
 
-    if (tile.type === 'PORT' && owner) {
-      // Port rent: doubles for each additional port owned
+    if (tile.type === 'PORT') {
+      if (!owner) {
+        return { amount: PORT_RENT_SCHEDULE.rent1Port, tier: '1 Port', isDoubled: false };
+      }
       const ownedPorts = BOARD_TILES
         .filter((t) => t.type === 'PORT' && owner.ownedPropertyIds?.includes(t.step))
         .length;
-      const portMultipliers: Record<number, number> = { 1: 1, 2: 2, 3: 4, 4: 8 };
-      const mult = portMultipliers[Math.min(ownedPorts, 4)] ?? 1;
-      const portRent = baseRent * mult;
-      return { amount: portRent, tier: `${ownedPorts} Port${ownedPorts > 1 ? 's' : ''} (×${mult})`, isDoubled: ownedPorts > 1 };
+      let rent = PORT_RENT_SCHEDULE.rent1Port;
+      if (ownedPorts === 2) rent = PORT_RENT_SCHEDULE.rent2Ports;
+      else if (ownedPorts >= 3) rent = PORT_RENT_SCHEDULE.rent3Ports;
+
+      return {
+        amount: rent,
+        tier: `${ownedPorts} Port${ownedPorts > 1 ? 's' : ''}`,
+        isDoubled: ownedPorts > 1
+      };
     }
 
-    if (houses === 1) return { amount: baseRent * 3,  tier: '1 House',       isDoubled: false };
-    if (houses === 2) return { amount: baseRent * 8,  tier: '2 Houses',      isDoubled: false };
-    if (houses === 3) return { amount: baseRent * 18, tier: '3 Houses',      isDoubled: false };
-    if (houses === 4) return { amount: baseRent * 28, tier: '4 Houses',      isDoubled: false };
-    if (houses === 5) return { amount: baseRent * 40, tier: 'Vyapar Hotel',  isDoubled: false };
+    const houses = this.state.propertyHouses[step] || 0;
+    const schedule = getPropertyRentSchedule(tile.color || step);
+
+    if (houses === 1) return { amount: schedule.rent1House, tier: '1 House', isDoubled: false };
+    if (houses === 2) return { amount: schedule.rent2Houses, tier: '2 Houses', isDoubled: false };
+    if (houses === 3) return { amount: schedule.rent3Houses, tier: '3 Houses', isDoubled: false };
+    if (houses === 4) return { amount: schedule.rent4Houses, tier: '4 Houses', isDoubled: false };
+    if (houses === 5) return { amount: schedule.rentHotel, tier: 'Vyapar Hotel', isDoubled: false };
 
     // Monopoly unimproved: double rent
     if (owner && tile.color && this.ownsColorGroup(owner.id, tile.color)) {
-      return { amount: baseRent * 2, tier: 'Monopoly (×2)', isDoubled: true };
+      return { amount: schedule.monopolyRent, tier: 'Monopoly (×2)', isDoubled: true };
     }
-    return { amount: baseRent, tier: 'Site Rent', isDoubled: false };
+    return { amount: schedule.siteRent, tier: 'Site Rent', isDoubled: false };
   }
 
   public ownsColorGroup(playerId: string, color: string | null): boolean {
     if (!color) return false;
-    const tiles = BOARD_TILES.filter((t) => t.color === color && (t.type === 'PROPERTY' || t.type === 'PORT'));
+    const tiles = BOARD_TILES.filter((t) => t.color === color && t.type === 'PROPERTY');
     if (tiles.length === 0) return false;
     const player = this.state.players.find((p) => p.id === playerId);
     if (!player) return false;
@@ -1655,13 +1827,13 @@ export class GameEngine {
   }
 
   public getHouseCost(step: number): number {
-    const tile = BOARD_TILES.find((t) => t.step === step);
-    return tile?.price ? Math.round(tile.price * 0.5) : 500;
+    return getHouseCostByStep(step);
   }
 
   // ── BUILD HOUSE ──────────────────────────────────────────────────────────────
 
   public buildHouse(step: number, actingPlayerId?: string): boolean {
+    if (this.state.isPaused) return false;
     const tile = BOARD_TILES.find((t) => t.step === step);
     if (!tile || !tile.price) return false;
     const owner = this.state.players.find((p) => p.ownedPropertyIds?.includes(step));
@@ -1679,7 +1851,7 @@ export class GameEngine {
 
     // Even building rule
     const groupTiles = BOARD_TILES.filter(
-      (t) => t.color === tile.color && (t.type === 'PROPERTY' || t.type === 'PORT')
+      (t) => t.color === tile.color && t.type === 'PROPERTY'
     );
     const thisHouses = this.state.propertyHouses[step] || 0;
     const minInGroup = Math.min(...groupTiles.map((t) => this.state.propertyHouses[t.step] || 0));
@@ -1708,6 +1880,7 @@ export class GameEngine {
   // ── SELL HOUSE BACK ──────────────────────────────────────────────────────────
 
   public sellHouse(step: number, actingPlayerId?: string): boolean {
+    if (this.state.isPaused) return false;
     const tile = BOARD_TILES.find((t) => t.step === step);
     if (!tile || !tile.price) return false;
     const owner = this.state.players.find((p) => p.ownedPropertyIds?.includes(step));
@@ -1723,7 +1896,7 @@ export class GameEngine {
 
     // Even selling rule: this property can't sell below sibling minimum
     const groupTiles = tile.color
-      ? BOARD_TILES.filter((t) => t.color === tile.color && (t.type === 'PROPERTY' || t.type === 'PORT'))
+      ? BOARD_TILES.filter((t) => t.color === tile.color && t.type === 'PROPERTY')
       : [tile];
     const maxInGroup = Math.max(...groupTiles.map((t) => this.state.propertyHouses[t.step] || 0));
     if (currentHouses < maxInGroup) {
@@ -1747,6 +1920,7 @@ export class GameEngine {
   // ── SELL PROPERTY TO BANK ────────────────────────────────────────────────────
 
   public sellProperty(step: number, actingPlayerId?: string): boolean {
+    if (this.state.isPaused) return false;
     const tile = BOARD_TILES.find((t) => t.step === step);
     if (!tile || !tile.price) return false;
     const owner = this.state.players.find((p) => p.ownedPropertyIds?.includes(step));
@@ -1779,6 +1953,7 @@ export class GameEngine {
   // ── MORTGAGE ────────────────────────────────────────────────────────────────
 
   public mortgageProperty(step: number, actingPlayerId?: string): boolean {
+    if (this.state.isPaused) return false;
     const tile = BOARD_TILES.find((t) => t.step === step);
     if (!tile || !tile.price) return false;
     const owner = this.state.players.find((p) => p.ownedPropertyIds?.includes(step));
@@ -1801,6 +1976,7 @@ export class GameEngine {
   }
 
   public unmortgageProperty(step: number, actingPlayerId?: string): boolean {
+    if (this.state.isPaused) return false;
     const tile = BOARD_TILES.find((t) => t.step === step);
     if (!tile || !tile.price) return false;
     const owner = this.state.players.find((p) => p.ownedPropertyIds?.includes(step));
@@ -1823,11 +1999,213 @@ export class GameEngine {
     return true;
   }
 
+  // ── TRADE & MONOPOLY HELPERS ────────────────────────────────────────────────
+
+  public checkAndAnnounceMonopoly(playerId: string, color: string): void {
+    const player = this.state.players.find((p) => p.id === playerId);
+    if (!player || !color) return;
+    const groupTiles = BOARD_TILES.filter((t) => t.color === color && (t.type === 'PROPERTY' || t.type === 'PORT'));
+    const ownedIds = player.ownedPropertyIds || [];
+    const fullGroupOwned = groupTiles.every((t) => ownedIds.includes(t.step));
+    if (fullGroupOwned && groupTiles.length > 0) {
+      this.state.monopolyAchieved = {
+        color: color,
+        colorName: color.toUpperCase(),
+        tiles: groupTiles.map((t) => t.step),
+        playerId: player.id
+      };
+      this.addLog(`👑 MONOPOLY UNLOCKED! ${player.name} controls all ${color.toUpperCase()} properties. Upgrades unlocked!`, 'info');
+      this.triggerAnnouncement({
+        type: 'info',
+        title: '👑 MONOPOLY UNLOCKED!',
+        message: `${player.name} now controls all ${color.toUpperCase()} properties!`,
+        playerName: player.name,
+        playerColor: player.tokenColor,
+        isImportant: true
+      }, 3000);
+    }
+  }
+
+  public executeTrade(proposal: TradeProposal): { success: boolean; message: string } {
+    const fromPlayer = this.state.players.find((p) => p.id === proposal.fromPlayerId);
+    const toPlayer = this.state.players.find((p) => p.id === proposal.toPlayerId);
+
+    if (!fromPlayer || !toPlayer) {
+      return { success: false, message: 'Invalid trading partners.' };
+    }
+    if (fromPlayer.isBankrupt || toPlayer.isBankrupt) {
+      return { success: false, message: 'Bankrupt players cannot trade.' };
+    }
+    if (fromPlayer.balance < proposal.offeredCash) {
+      return { success: false, message: `${fromPlayer.name} does not have enough cash (needs ₹${proposal.offeredCash.toLocaleString()}).` };
+    }
+    if (toPlayer.balance < proposal.requestedCash) {
+      return { success: false, message: `${toPlayer.name} does not have enough cash (needs ₹${proposal.requestedCash.toLocaleString()}).` };
+    }
+    if (
+      proposal.offeredPropertySteps.length === 0 &&
+      proposal.offeredCash === 0 &&
+      proposal.requestedPropertySteps.length === 0 &&
+      proposal.requestedCash === 0
+    ) {
+      return { success: false, message: 'Trade offer is empty.' };
+    }
+
+    // Check property ownership and building restrictions
+    for (const step of proposal.offeredPropertySteps) {
+      if (!fromPlayer.ownedPropertyIds?.includes(step)) {
+        return { success: false, message: `${fromPlayer.name} does not own the offered property.` };
+      }
+      if ((this.state.propertyHouses[step] || 0) > 0) {
+        return { success: false, message: 'Cannot trade properties with buildings. Sell buildings first.' };
+      }
+    }
+    for (const step of proposal.requestedPropertySteps) {
+      if (!toPlayer.ownedPropertyIds?.includes(step)) {
+        return { success: false, message: `${toPlayer.name} does not own the requested property.` };
+      }
+      if ((this.state.propertyHouses[step] || 0) > 0) {
+        return { success: false, message: 'Cannot trade properties with buildings. Sell buildings first.' };
+      }
+    }
+
+    // AI Evaluation (when trading with an AI bot)
+    if (!toPlayer.isHuman) {
+      const offeredTiles = proposal.offeredPropertySteps.map((s) => BOARD_TILES.find((t) => t.step === s)).filter(Boolean);
+      const requestedTiles = proposal.requestedPropertySteps.map((s) => BOARD_TILES.find((t) => t.step === s)).filter(Boolean);
+
+      let offeredVal = proposal.offeredCash;
+      for (const t of offeredTiles) {
+        let val = t?.price || 1000;
+        if (t?.color) {
+          const groupTiles = BOARD_TILES.filter((g) => g.color === t.color && g.type === 'PROPERTY');
+          const alreadyOwnedByAI = groupTiles.filter((g) => toPlayer.ownedPropertyIds?.includes(g.step)).length;
+          if (alreadyOwnedByAI === groupTiles.length - 1) {
+            val *= 1.8; // High strategic value if completes monopoly
+          }
+        }
+        offeredVal += val;
+      }
+
+      let requestedVal = proposal.requestedCash;
+      for (const t of requestedTiles) {
+        let val = t?.price || 1000;
+        if (t?.color) {
+          const groupTiles = BOARD_TILES.filter((g) => g.color === t.color && g.type === 'PROPERTY');
+          const alreadyOwnedByHuman = groupTiles.filter((g) => fromPlayer.ownedPropertyIds?.includes(g.step)).length;
+          if (alreadyOwnedByHuman === groupTiles.length - 1) {
+            val *= 1.5; // Premium if surrender gives human monopoly
+          }
+        }
+        requestedVal += val;
+      }
+
+      if (offeredVal < requestedVal * 0.85) {
+        const diff = Math.round(requestedVal - offeredVal);
+        return {
+          success: false,
+          message: `${toPlayer.name} declined: "This deal is not balanced. Add around ₹${diff.toLocaleString()} more in cash or properties to make it fair."`
+        };
+      }
+    }
+
+    // Execute Trade Transfer
+    this.updatePlayerBalance(fromPlayer.id, -proposal.offeredCash + proposal.requestedCash);
+    this.updatePlayerBalance(toPlayer.id, proposal.offeredCash - proposal.requestedCash);
+
+    this.state.players = this.state.players.map((p) => {
+      if (p.id === fromPlayer.id) {
+        const updated = (p.ownedPropertyIds || [])
+          .filter((s) => !proposal.offeredPropertySteps.includes(s))
+          .concat(proposal.requestedPropertySteps);
+        return { ...p, ownedPropertyIds: updated };
+      }
+      if (p.id === toPlayer.id) {
+        const updated = (p.ownedPropertyIds || [])
+          .filter((s) => !proposal.requestedPropertySteps.includes(s))
+          .concat(proposal.offeredPropertySteps);
+        return { ...p, ownedPropertyIds: updated };
+      }
+      return p;
+    });
+
+    SoundEffects.getInstance().playPurchaseJingle();
+
+    const offerSummary = proposal.offeredPropertySteps.length > 0
+      ? proposal.offeredPropertySteps.map((s) => BOARD_TILES.find((t) => t.step === s)?.name).join(', ')
+      : `₹${proposal.offeredCash}`;
+    const reqSummary = proposal.requestedPropertySteps.length > 0
+      ? proposal.requestedPropertySteps.map((s) => BOARD_TILES.find((t) => t.step === s)?.name).join(', ')
+      : `₹${proposal.requestedCash}`;
+
+    this.addLog(`🤝 Trade completed: ${fromPlayer.name} exchanged ${offerSummary} with ${toPlayer.name} for ${reqSummary}.`, 'buy');
+
+    this.triggerAnnouncement({
+      type: 'buy',
+      title: '🤝 TRADE FINALIZED!',
+      message: `${fromPlayer.name} and ${toPlayer.name} agreed on a commercial exchange!`,
+      playerName: fromPlayer.name,
+      playerColor: fromPlayer.tokenColor,
+      isImportant: true
+    }, 3200);
+
+    // Re-check monopolies for traded colors
+    for (const step of [...proposal.offeredPropertySteps, ...proposal.requestedPropertySteps]) {
+      const tile = BOARD_TILES.find((t) => t.step === step);
+      if (tile?.color) {
+        this.checkAndAnnounceMonopoly(fromPlayer.id, tile.color);
+        this.checkAndAnnounceMonopoly(toPlayer.id, tile.color);
+      }
+    }
+
+    this.emit();
+    return { success: true, message: `Trade completed successfully with ${toPlayer.name}!` };
+  }
+
   // ── BANKRUPTCY & WIN ─────────────────────────────────────────────────────────
+
+  public autoMortgageForAI(playerId: string): void {
+    const player = this.state.players.find((p) => p.id === playerId);
+    if (!player || player.balance >= 0) return;
+
+    // 1. Sell houses/hotels first
+    for (const step of player.ownedPropertyIds || []) {
+      while ((this.state.propertyHouses[step] || 0) > 0 && player.balance < 0) {
+        this.sellHouse(step, playerId);
+      }
+    }
+
+    // 2. Mortgage unmortgaged properties
+    for (const step of player.ownedPropertyIds || []) {
+      if (player.balance >= 0) break;
+      if (!this.state.mortgagedProperties.includes(step)) {
+        this.mortgageProperty(step, playerId);
+      }
+    }
+  }
 
   private checkBankruptcy(debtorId: string, creditorId: string | null): void {
     const debtor = this.state.players.find((p) => p.id === debtorId);
     if (!debtor || debtor.balance >= 0) return;
+
+    // Check if debtor has mortgageable assets
+    const unmortgagedProps = (debtor.ownedPropertyIds || []).filter((s) => !this.state.mortgagedProperties.includes(s));
+    const buildingsCount = (debtor.ownedPropertyIds || []).reduce((sum, s) => sum + (this.state.propertyHouses[s] || 0), 0);
+    const hasMortgageableAssets = unmortgagedProps.length > 0 || buildingsCount > 0;
+
+    if (debtor.isHuman && hasMortgageableAssets) {
+      // Alert human player to mortgage to clear their debt!
+      this.triggerAnnouncement({
+        type: 'tax',
+        title: '⚠️ DEBT: MORTGAGE REQUIRED',
+        message: `Your balance is -₹${Math.abs(debtor.balance).toLocaleString()}. Mortgage properties or sell buildings to clear debt!`,
+        amount: Math.abs(debtor.balance),
+        amountType: 'minus',
+        playerName: debtor.name,
+        playerColor: debtor.tokenColor
+      }, 4000);
+      return;
+    }
 
     if (creditorId) {
       // Transfer all assets to creditor
@@ -1847,7 +2225,8 @@ export class GameEngine {
         title: '⚠️ BANKRUPT!',
         message: `${debtor.name} went bankrupt! Assets surrendered to ${creditor?.name}.`,
         playerName: debtor.name,
-        playerColor: debtor.tokenColor
+        playerColor: debtor.tokenColor,
+        isImportant: true
       }, 3000);
     } else {
       this.state.players = this.state.players.map((p) =>
@@ -1861,7 +2240,8 @@ export class GameEngine {
         title: '⚠️ BANKRUPT!',
         message: `${debtor.name} went bankrupt! Assets returned to the Bank.`,
         playerName: debtor.name,
-        playerColor: debtor.tokenColor
+        playerColor: debtor.tokenColor,
+        isImportant: true
       }, 3000);
     }
 
@@ -1881,6 +2261,14 @@ export class GameEngine {
       this.state.phase = 'GAME_OVER';
       SoundEffects.getInstance().playPurchaseJingle();
       this.addLog(`GAME OVER! ${active[0].name} wins with ₹${active[0].netWorth.toLocaleString()} net worth!`, 'info');
+      this.triggerAnnouncement({
+        type: 'info',
+        title: '👑 VICTORY!',
+        message: `${active[0].name} has won Navo Vyapar!`,
+        playerName: active[0].name,
+        playerColor: active[0].tokenColor,
+        isImportant: true
+      }, 4000);
       this.emit();
     }
   }
@@ -1960,6 +2348,7 @@ export class GameEngine {
   // ── TURN MANAGEMENT ──────────────────────────────────────────────────────────
 
   public endTurn(): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) {
       this.mpAdapter.endTurn();
       return;
@@ -1987,14 +2376,140 @@ export class GameEngine {
     this.addLog(`Turn passed to ${next.name} (${next.colorName}).`, 'info');
     this.emit();
 
+    // Auto-save game state for solo/AI matches so progress is never lost
+    if (!this.mpAdapter?.isMultiplayerActive()) {
+      this.saveGame();
+    }
+
     if (!next.isHuman && !this.mpAdapter?.isMultiplayerActive()) this.triggerBotTurn();
   }
 
+  // ── CHANCE CARD DISMISSAL ──────────────────────────────────────────────────
+  public dismissChanceCard(): void {
+    if (this.state.activeChanceCard) {
+      this.state.activeChanceCard = null;
+      this.emit();
+      const active = this.getActivePlayer();
+      if (active && !active.isHuman) {
+        this.checkBotEndTurn(active);
+      }
+    }
+  }
+
+  // ── SAVE & LOAD SYSTEM (SOLO PLAY PERSISTENCE) ─────────────────────────────
+  public saveGame(): boolean {
+    try {
+      if (typeof window === 'undefined') return false;
+      const savePayload = {
+        timestamp: Date.now(),
+        players: this.state.players,
+        activePlayerIndex: this.state.activePlayerIndex,
+        phase: this.state.phase,
+        propertyHouses: this.state.propertyHouses,
+        mortgagedProperties: this.state.mortgagedProperties,
+        currentBoardSeed: this.currentBoardSeed,
+        logs: this.state.logs.slice(0, 35),
+        bankLoanTaken: this.state.bankLoanTaken,
+        bankLoanBalance: this.state.bankLoanBalance,
+        aiDifficulty: this.aiDifficulty
+      };
+      localStorage.setItem('navo_vyapar_saved_game', JSON.stringify(savePayload));
+      return true;
+    } catch (e) {
+      console.error('Failed to save game:', e);
+      return false;
+    }
+  }
+
+  public loadGame(): boolean {
+    try {
+      if (typeof window === 'undefined') return false;
+      const raw = localStorage.getItem('navo_vyapar_saved_game');
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.players) || data.players.length === 0) return false;
+
+      this.currentBoardSeed = data.currentBoardSeed || 100000;
+      shuffleMatchTiles(this.currentBoardSeed);
+      this.aiDifficulty = data.aiDifficulty || 'MEDIUM';
+
+      this.state = {
+        players: data.players,
+        activePlayerIndex: data.activePlayerIndex ?? 0,
+        phase: data.phase === 'ROLLING' || data.phase === 'TILE_ACTION' ? 'PLAYER_TURN' : (data.phase || 'PLAYER_TURN'),
+        diceState: { rolling: false, value: null },
+        hoppingState: null,
+        logs: data.logs || [{ id: 'loaded', text: 'Saved game restored.', type: 'info', timestamp: Date.now() }],
+        selectedProperty: null,
+        activeChanceCard: null,
+        propertyHouses: data.propertyHouses || {},
+        mortgagedProperties: data.mortgagedProperties || [],
+        winner: null,
+        auctionState: null,
+        monopolyAchieved: null,
+        bankLoanTaken: data.bankLoanTaken || {},
+        bankLoanBalance: data.bankLoanBalance || {},
+        hoveredOwnerId: null,
+        activeAnnouncement: {
+          id: 'restored',
+          type: 'info',
+          title: 'MATCH RESTORED',
+          message: 'Saved game loaded successfully! Resuming match.',
+          timestamp: Date.now(),
+          durationMs: 2200
+        }
+      };
+      this.emit();
+      this.addLog('Saved game loaded successfully.', 'info');
+      return true;
+    } catch (e) {
+      console.error('Failed to load game:', e);
+      return false;
+    }
+  }
+
+  public hasSavedGame(): boolean {
+    try {
+      if (typeof window === 'undefined') return false;
+      const raw = localStorage.getItem('navo_vyapar_saved_game');
+      return Boolean(raw);
+    } catch {
+      return false;
+    }
+  }
+
+  public getSavedGameSummary(): { date: string; balance: number; propertiesCount: number; heroName: string } | null {
+    try {
+      if (typeof window === 'undefined') return null;
+      const raw = localStorage.getItem('navo_vyapar_saved_game');
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      const hero = data.players?.find((p: any) => p.isHuman) || data.players?.[0];
+      return {
+        date: new Date(data.timestamp).toLocaleDateString() + ' ' + new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        balance: hero?.balance || 0,
+        propertiesCount: hero?.ownedPropertyIds?.length || 0,
+        heroName: hero?.name || 'Player'
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  public deleteSavedGame(): void {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.removeItem('navo_vyapar_saved_game');
+    } catch {}
+  }
+
   private triggerBotTurn(): void {
+    if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) return;
     if (this.turnTimer) clearTimeout(this.turnTimer);
     const delay = this.aiDifficulty === 'HARD' ? 700 : this.aiDifficulty === 'MEDIUM' ? 1200 : 1800;
     this.turnTimer = setTimeout(() => {
+      if (this.state.isPaused) return;
       const current = this.getActivePlayer();
       if (!current.isHuman && this.state.phase === 'PLAYER_TURN' && !this.mpAdapter?.isMultiplayerActive()) {
         this.requestRoll();
@@ -2003,9 +2518,11 @@ export class GameEngine {
   }
 
   private checkBotEndTurn(player: PlayerData & { isHuman: boolean }): void {
+    if (this.state.isPaused) return;
     if (!player.isHuman && !this.mpAdapter?.isMultiplayerActive()) {
       const delay = this.aiDifficulty === 'HARD' ? 800 : this.aiDifficulty === 'MEDIUM' ? 1400 : 2000;
       setTimeout(() => {
+        if (this.state.isPaused) return;
         if (this.state.phase === 'RESOLVING' && !this.mpAdapter?.isMultiplayerActive()) this.endTurn();
       }, delay);
     }

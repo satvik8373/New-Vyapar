@@ -5,7 +5,13 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { GameEngine, GameEngineState } from '../../game-engine/GameEngine';
-import { COLOR_HEX_MAP, DEFAULT_BOARD_TILES } from '@shared/game-data/boardData';
+import {
+  COLOR_HEX_MAP,
+  DEFAULT_BOARD_TILES,
+  COLOR_GROUP_NAMES,
+  getPropertyRentSchedule,
+  PORT_RENT_SCHEDULE
+} from '@shared/game-data/boardData';
 import { CurrencyCoin } from '../components/common/CurrencyCoin';
 import { GreenHouseIcon, RedHotelIcon } from '../components/common/HouseHotelIcons';
 import { PlayerAvatar } from '../components/common/PlayerAvatar';
@@ -24,15 +30,6 @@ const LANDMARK_SCENIC_BY_NAME: Record<string, string> = {
   'STATUE OF UNITY': '/assets/images/landmarks/statue_of_unity.jpg',
   'KANDLA PORT': '/assets/images/landmarks/kandla_port.jpg',
   'KANDLA': '/assets/images/landmarks/kandla_port.jpg'
-};
-
-const COLOR_REGION_NAMES: Record<string, string> = {
-  orange: 'Saurashtra Coast',
-  blue: 'Kutch Ports',
-  green: 'Pilgrim Cities',
-  yellow: 'Central Heritage',
-  red: 'Industrial Hubs',
-  pink: 'Textile Arteries'
 };
 
 export const PropertySheet: React.FC = () => {
@@ -80,33 +77,53 @@ export const PropertySheet: React.FC = () => {
   const tile = selectedProperty;
   const tileStep = tile.step;
   const isPropertyTile = tile.type === 'PROPERTY' || tile.type === 'PORT' || tile.price !== null;
+  const isPort = tile.type === 'PORT';
   const owner = players.find((p) => p.ownedPropertyIds?.includes(tileStep));
   const isOwnedByHero = owner?.id === heroPlayer.id;
   const isOwnedByOther = Boolean(owner && owner.id !== heroPlayer.id);
 
-  const tileColor = tile.color ? COLOR_HEX_MAP[tile.color] || '#3b82f6' : '#3b82f6';
-  const regionName = tile.color ? COLOR_REGION_NAMES[tile.color] || 'State Asset' : 'Gujarat Commercial';
+  const isSpecialTile =
+    tile.type === 'TAX' ||
+    tile.type === 'BANK' ||
+    tile.type === 'SPECIAL' ||
+    tile.type === 'CHANCE';
+
+  const tileColor = isPort
+    ? '#0284c7'
+    : (tile.color ? COLOR_HEX_MAP[tile.color] || '#3b82f6' : (
+        tile.type === 'TAX' ? '#e11d48' :
+        tile.type === 'BANK' ? '#0284c7' :
+        tile.type === 'SPECIAL' ? '#d97706' :
+        tile.type === 'CHANCE' ? '#8b5cf6' : '#3b82f6'
+      ));
+  const regionName = isPort
+    ? 'Maritime Seaport'
+    : (tile.color ? COLOR_GROUP_NAMES[tile.color] || 'Gujarat Commercial' : 'Gujarat Commercial');
   const tileGujarati = tile.gujaratiName || 'ગુજરાત સનદ';
-  const price = tile.price || 0;
-  const baseRent = Math.round(price * 0.1);
-  const houseCost = Math.round(price * 0.5);
-  const mortgageValue = Math.round(price * 0.5);
-  const unmortgageCost = Math.round(price * 0.55);
+
+  const propSchedule = getPropertyRentSchedule(tile.color || tileStep);
+  const portSchedule = PORT_RENT_SCHEDULE;
+
+  const price = tile.price || (isPort ? portSchedule.price : 0);
+  const baseRent = isPort ? portSchedule.rent1Port : propSchedule.siteRent;
+  const houseCost = isPort ? 0 : propSchedule.houseCost;
+  const mortgageValue = isPort ? portSchedule.mortgageValue : propSchedule.mortgageValue;
+  const unmortgageCost = isPort ? portSchedule.unmortgageCost : propSchedule.unmortgageCost;
 
   const currentHouses = propertyHouses[tileStep] || 0;
   const isMortgaged = mortgagedProperties.includes(tileStep);
 
-  const rent1 = baseRent * 3;
-  const rent2 = baseRent * 8;
-  const rent3 = baseRent * 18;
-  const rent4 = baseRent * 28;
-  const rentHotel = baseRent * 40;
+  const rent1 = propSchedule.rent1House;
+  const rent2 = propSchedule.rent2Houses;
+  const rent3 = propSchedule.rent3Houses;
+  const rent4 = propSchedule.rent4Houses;
+  const rentHotel = propSchedule.rentHotel;
 
   const currentRent = isPropertyTile ? engine.calculateRent(tileStep) : { amount: 0, tier: 'None', isDoubled: false };
   const hasMonopoly = owner && tile.color ? engine.ownsColorGroup(owner.id, tile.color) : false;
 
-  const canBuildHouse = isOwnedByHero && hasMonopoly && !isMortgaged && currentHouses < 5 && heroPlayer.balance >= houseCost;
-  const canSellHouse = isOwnedByHero && currentHouses > 0;
+  const canBuildHouse = !isPort && isOwnedByHero && hasMonopoly && !isMortgaged && currentHouses < 5 && heroPlayer.balance >= houseCost;
+  const canSellHouse = !isPort && isOwnedByHero && currentHouses > 0;
   const sellHouseValue = Math.round(houseCost * 0.5);
   const sellPropertyValue = Math.round(price * 0.5);
 
@@ -155,6 +172,7 @@ export const PropertySheet: React.FC = () => {
     }
   };
 
+  // Determine whether turn action buttons should render in left column
   const hasTurnActions =
     (!owner && isPropertyTile && phase === 'TILE_ACTION' && isMyTurn) ||
     (owner && isOwnedByHero && isPropertyTile);
@@ -185,21 +203,28 @@ export const PropertySheet: React.FC = () => {
 
       {isOwnedByHero && isPropertyTile && (
         <div className="candy-owner-actions">
-          {currentHouses < 5 && (
-            <CandyButton
-              fullWidth
-              variant="mint"
-              size="sm"
-              disabled={!canBuildHouse}
-              onClick={handleBuild}
-            >
-              {currentHouses === 4
-                ? `Build Hotel (+₹${houseCost.toLocaleString()})`
-                : `Build House (+₹${houseCost.toLocaleString()})`}
-            </CandyButton>
+          {!isPort && currentHouses < 5 && (
+            <>
+              <CandyButton
+                fullWidth
+                variant="mint"
+                size="sm"
+                disabled={!canBuildHouse}
+                onClick={handleBuild}
+              >
+                {currentHouses === 4
+                  ? `Build Hotel (+₹${houseCost.toLocaleString()})`
+                  : `Build House (+₹${houseCost.toLocaleString()})`}
+              </CandyButton>
+              {!hasMonopoly && (
+                <div style={{ fontSize: '10.5px', color: '#64748b', textAlign: 'center', marginTop: '4px', fontWeight: 600 }}>
+                  Own all 3 {tile.color?.toUpperCase()} properties to build
+                </div>
+              )}
+            </>
           )}
 
-          {currentHouses > 0 && (
+          {!isPort && currentHouses > 0 && (
             <CandyButton
               fullWidth
               variant="honey"
@@ -263,7 +288,7 @@ export const PropertySheet: React.FC = () => {
           <div className="candy-deed-band-left">
             <div className="candy-deed-badge-row">
               <span className="candy-deed-badge-text">
-                {isPropertyTile ? 'TITLE DEED' : 'LANDMARK'}
+                {isPort ? 'MARITIME HARBOR DEED' : (isPropertyTile ? 'TITLE DEED' : 'LANDMARK')}
               </span>
               <span className="candy-deed-slot-pill">SLOT #{tileStep}</span>
             </div>
@@ -286,9 +311,23 @@ export const PropertySheet: React.FC = () => {
           <div className={`candy-deed-left-pane ${hasTurnActions ? 'with-actions' : 'photo-only'}`}>
             <div
               className="candy-deed-scenic-header"
-              style={{ backgroundImage: `url("${cityBgImage}")` }}
+              style={
+                isSpecialTile
+                  ? { backgroundColor: tileColor, backgroundImage: `linear-gradient(135deg, ${tileColor}, #0f172a)` }
+                  : { backgroundImage: `url("${cityBgImage}")` }
+              }
             >
               <div className="candy-deed-scenic-overlay" />
+
+              {isSpecialTile && tile.imageUrl && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '110px', position: 'relative', zIndex: 2 }}>
+                  <img
+                    src={tile.imageUrl}
+                    alt={tile.name}
+                    style={{ maxHeight: '80px', maxWidth: '80px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }}
+                  />
+                </div>
+              )}
 
               <div className="candy-deed-header-bottom">
                 <div className="candy-deed-title-group">
@@ -312,94 +351,169 @@ export const PropertySheet: React.FC = () => {
           <div className="candy-deed-right-pane">
           <div className="candy-deed-body">
           {isPropertyTile ? (
-            <>
-              {/* Regional Monopoly Highlight Banner */}
-              {hasMonopoly && (
-                <div className="candy-deed-monopoly-banner">
-                  <span>Regional Monopoly Active • 2× Rent</span>
-                </div>
-              )}
-
-              {/* Base Rent Highlight Bar */}
-              <div className="candy-deed-base-rent-row">
-                <div className="base-rent-label">
-                  <span className="base-rent-dot" style={{ backgroundColor: tileColor }} />
-                  <span>Base Rent</span>
-                </div>
-                <div className="base-rent-val">
-                  <CurrencyCoin size={15} />
-                  <span>₹{baseRent.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Rent Schedule */}
-              <div className="candy-rent-schedule">
-                <div className={`candy-schedule-row ${currentHouses === 1 ? 'tier-active' : ''}`}>
-                  <div className="schedule-left">
-                    <GreenHouseIcon size={14} />
-                    <span>With 1 House</span>
-                    {currentHouses === 1 && <span className="current-tier-badge">ACTIVE</span>}
+            isPort ? (
+              <>
+                {/* Seaport Status Bar */}
+                <div className="candy-deed-base-rent-row">
+                  <div className="base-rent-label">
+                    <span className="base-rent-dot" style={{ backgroundColor: '#0284c7' }} />
+                    <span>Single Port Berth Tariff</span>
                   </div>
-                  <span className="schedule-val">₹{rent1.toLocaleString()}</span>
-                </div>
-
-                <div className={`candy-schedule-row ${currentHouses === 2 ? 'tier-active' : ''}`}>
-                  <div className="schedule-left">
-                    <GreenHouseIcon size={14} />
-                    <span>With 2 Houses</span>
-                    {currentHouses === 2 && <span className="current-tier-badge">ACTIVE</span>}
+                  <div className="base-rent-val">
+                    <CurrencyCoin size={15} />
+                    <span>₹{portSchedule.rent1Port.toLocaleString()}</span>
                   </div>
-                  <span className="schedule-val">₹{rent2.toLocaleString()}</span>
                 </div>
 
-                <div className={`candy-schedule-row ${currentHouses === 3 ? 'tier-active' : ''}`}>
-                  <div className="schedule-left">
-                    <GreenHouseIcon size={14} />
-                    <span>With 3 Houses</span>
-                    {currentHouses === 3 && <span className="current-tier-badge">ACTIVE</span>}
+                {/* Port Rent Schedule */}
+                <div className="candy-rent-schedule">
+                  {(() => {
+                    const ownedPortCount = owner
+                      ? DEFAULT_BOARD_TILES.filter((t) => t.type === 'PORT' && owner.ownedPropertyIds?.includes(t.step)).length
+                      : 0;
+                    return (
+                      <>
+                        <div className={`candy-schedule-row ${ownedPortCount === 1 ? 'tier-active' : ''}`}>
+                          <div className="schedule-left">
+                            <span style={{ fontSize: 13, marginRight: 6 }}>⚓</span>
+                            <span>With 1 Seaport owned</span>
+                            {ownedPortCount === 1 && <span className="current-tier-badge">ACTIVE</span>}
+                          </div>
+                          <span className="schedule-val">₹{portSchedule.rent1Port.toLocaleString()}</span>
+                        </div>
+
+                        <div className={`candy-schedule-row ${ownedPortCount === 2 ? 'tier-active' : ''}`}>
+                          <div className="schedule-left">
+                            <span style={{ fontSize: 13, marginRight: 6 }}>⚓⚓</span>
+                            <span>With 2 Seaports owned</span>
+                            {ownedPortCount === 2 && <span className="current-tier-badge">ACTIVE</span>}
+                          </div>
+                          <span className="schedule-val">₹{portSchedule.rent2Ports.toLocaleString()}</span>
+                        </div>
+
+                        <div className={`candy-schedule-row hotel-row ${ownedPortCount >= 3 ? 'tier-active' : ''}`}>
+                          <div className="schedule-left">
+                            <span style={{ fontSize: 13, marginRight: 6 }}>⚓⚓⚓</span>
+                            <span style={{ fontWeight: 800 }}>With all 3 Seaports owned</span>
+                            {ownedPortCount >= 3 && <span className="current-tier-badge">ACTIVE</span>}
+                          </div>
+                          <span className="schedule-val hotel-val">₹{portSchedule.rent3Ports.toLocaleString()}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {/* Economic Ledger Grid for Ports */}
+                <div className="candy-deed-ledger-grid">
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">Asset Type</span>
+                    <span className="ledger-val">Maritime Port</span>
                   </div>
-                  <span className="schedule-val">₹{rent3.toLocaleString()}</span>
-                </div>
-
-                <div className={`candy-schedule-row ${currentHouses === 4 ? 'tier-active' : ''}`}>
-                  <div className="schedule-left">
-                    <GreenHouseIcon size={14} />
-                    <span>With 4 Houses</span>
-                    {currentHouses === 4 && <span className="current-tier-badge">ACTIVE</span>}
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">Rent Multiplier</span>
+                    <span className="ledger-val">2× / 4×</span>
                   </div>
-                  <span className="schedule-val">₹{rent4.toLocaleString()}</span>
-                </div>
-
-                <div className={`candy-schedule-row hotel-row ${currentHouses === 5 ? 'tier-active' : ''}`}>
-                  <div className="schedule-left">
-                    <RedHotelIcon size={15} />
-                    <span style={{ fontWeight: 800 }}>With Hotel</span>
-                    {currentHouses === 5 && <span className="current-tier-badge">ACTIVE</span>}
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">Mortgage Value</span>
+                    <span className="ledger-val">₹{mortgageValue.toLocaleString()}</span>
                   </div>
-                  <span className="schedule-val hotel-val">₹{rentHotel.toLocaleString()}</span>
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">Redeem (+10%)</span>
+                    <span className="ledger-val">₹{unmortgageCost.toLocaleString()}</span>
+                  </div>
                 </div>
-              </div>
+              </>
+            ) : (
+              <>
+                {/* Regional Monopoly Highlight Banner */}
+                {hasMonopoly && (
+                  <div className="candy-deed-monopoly-banner">
+                    <span>Regional Monopoly Active • 2× Rent</span>
+                  </div>
+                )}
 
-              {/* Economic Ledger Grid */}
-              <div className="candy-deed-ledger-grid">
-                <div className="deed-ledger-cell">
-                  <span className="ledger-label">House Cost</span>
-                  <span className="ledger-val">₹{houseCost.toLocaleString()}</span>
+                {/* Base Rent Highlight Bar */}
+                <div className="candy-deed-base-rent-row">
+                  <div className="base-rent-label">
+                    <span className="base-rent-dot" style={{ backgroundColor: tileColor }} />
+                    <span>Base Rent (Site Rent)</span>
+                  </div>
+                  <div className="base-rent-val">
+                    <CurrencyCoin size={15} />
+                    <span>₹{baseRent.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="deed-ledger-cell">
-                  <span className="ledger-label">Hotel Cost</span>
-                  <span className="ledger-val">₹{houseCost.toLocaleString()} + 4 Houses</span>
+
+                {/* Rent Schedule */}
+                <div className="candy-rent-schedule">
+                  <div className={`candy-schedule-row ${currentHouses === 1 ? 'tier-active' : ''}`}>
+                    <div className="schedule-left">
+                      <GreenHouseIcon size={14} />
+                      <span>With 1 House</span>
+                      {currentHouses === 1 && <span className="current-tier-badge">ACTIVE</span>}
+                    </div>
+                    <span className="schedule-val">₹{rent1.toLocaleString()}</span>
+                  </div>
+
+                  <div className={`candy-schedule-row ${currentHouses === 2 ? 'tier-active' : ''}`}>
+                    <div className="schedule-left">
+                      <GreenHouseIcon size={14} />
+                      <span>With 2 Houses</span>
+                      {currentHouses === 2 && <span className="current-tier-badge">ACTIVE</span>}
+                    </div>
+                    <span className="schedule-val">₹{rent2.toLocaleString()}</span>
+                  </div>
+
+                  <div className={`candy-schedule-row ${currentHouses === 3 ? 'tier-active' : ''}`}>
+                    <div className="schedule-left">
+                      <GreenHouseIcon size={14} />
+                      <span>With 3 Houses</span>
+                      {currentHouses === 3 && <span className="current-tier-badge">ACTIVE</span>}
+                    </div>
+                    <span className="schedule-val">₹{rent3.toLocaleString()}</span>
+                  </div>
+
+                  <div className={`candy-schedule-row ${currentHouses === 4 ? 'tier-active' : ''}`}>
+                    <div className="schedule-left">
+                      <GreenHouseIcon size={14} />
+                      <span>With 4 Houses</span>
+                      {currentHouses === 4 && <span className="current-tier-badge">ACTIVE</span>}
+                    </div>
+                    <span className="schedule-val">₹{rent4.toLocaleString()}</span>
+                  </div>
+
+                  <div className={`candy-schedule-row hotel-row ${currentHouses === 5 ? 'tier-active' : ''}`}>
+                    <div className="schedule-left">
+                      <RedHotelIcon size={15} />
+                      <span style={{ fontWeight: 800 }}>With Hotel</span>
+                      {currentHouses === 5 && <span className="current-tier-badge">ACTIVE</span>}
+                    </div>
+                    <span className="schedule-val hotel-val">₹{rentHotel.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="deed-ledger-cell">
-                  <span className="ledger-label">Mortgage Value</span>
-                  <span className="ledger-val">₹{mortgageValue.toLocaleString()}</span>
+
+                {/* Economic Ledger Grid */}
+                <div className="candy-deed-ledger-grid">
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">House Cost</span>
+                    <span className="ledger-val">₹{houseCost.toLocaleString()}</span>
+                  </div>
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">Hotel Cost</span>
+                    <span className="ledger-val">₹{houseCost.toLocaleString()} + 4 Houses</span>
+                  </div>
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">Mortgage Value</span>
+                    <span className="ledger-val">₹{mortgageValue.toLocaleString()}</span>
+                  </div>
+                  <div className="deed-ledger-cell">
+                    <span className="ledger-label">Redeem (+10%)</span>
+                    <span className="ledger-val">₹{unmortgageCost.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="deed-ledger-cell">
-                  <span className="ledger-label">Redeem (+10%)</span>
-                  <span className="ledger-val">₹{unmortgageCost.toLocaleString()}</span>
-                </div>
-              </div>
-            </>
+              </>
+            )
           ) : (
             /* Non-property tile: Authentic Gujarat Landmark / Rule Description */
             <div style={{ padding: '8px 0', textAlign: 'left' }}>
@@ -419,13 +533,13 @@ export const PropertySheet: React.FC = () => {
                 </span>
                 <span style={{ fontSize: '14px', fontWeight: 800, color: tileColor }}>
                   {tile.type === 'START' && 'Collect ₹1,000 subsidy every time you pass or land here.'}
-                  {tile.type === 'TAX' && 'Pay 10% statutory trade levy to the Gujarat State Treasury.'}
+                  {tile.type === 'TAX' && 'Pay commercial trade duties and statutory revenue to the Gujarat State Treasury.'}
                   {tile.type === 'CHANCE' && 'Draw an opportunistic Chance Card with real financial rewards or tariffs.'}
                   {tile.type === 'FREE_PARKING' && 'Safe Rest Oasis: Rest peacefully without any rental charges.'}
-                  {tile.type === 'BANK' && 'Central Bank: Take liquidity loans or manage state financing.'}
+                  {tile.type === 'BANK' && 'Central Bank: Take liquidity loans and collect ₹250 universal interest dividends.'}
                   {tile.type === 'JAIL' && 'State Jail / Customs Detention: Rest here or pay bail fee to exit.'}
                   {tile.type === 'GO_TO_JAIL' && 'Sent immediately to State Detention without passing GO.'}
-                  {tile.type === 'SPECIAL' && 'State Special Commercial Reserve.'}
+                  {tile.type === 'SPECIAL' && 'State Gold Reserve: Collect ₹500 Sovereign Gold Bullion Dividend!'}
                 </span>
               </div>
             </div>

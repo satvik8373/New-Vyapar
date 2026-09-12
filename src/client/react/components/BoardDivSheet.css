@@ -77,7 +77,7 @@
   box-sizing: border-box;
 }
 
-/* 9x9 CSS Grid: Floating Separated Cards (Balanced 1:1 Proportions) */
+/* 9x9 CSS Grid: Proper Solid Board Container Layout (Zero Gaps, Zero Tarmac/Black Leakage) */
 .board-grid-9x9 {
   position: relative;
   width: 100%;
@@ -85,48 +85,41 @@
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
   grid-template-rows: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
-  gap: clamp(2px, 0.5vw, 3.5px);
-  background: transparent;
-  border: none;
-  border-radius: 6px;
+  gap: 0;
+  background: #ffffff;
+  border: 2px solid #0f172a;
+  border-radius: 4px;
   /* overflow must be VISIBLE so car tokens on the perimeter road are not clipped */
   overflow: visible;
   box-sizing: border-box;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================================================
-   BOARD CELL BASE: Floating Separated Card (Tactile 3D Island)
+   BOARD CELL BASE: Flush Clean Rectangular Tile (No Gap Holes)
    ========================================================================== */
 .board-cell {
   position: relative;
+  z-index: 5;
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
   background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  border-radius: 5px;
+  border: none;
+  border-radius: 0;
   overflow: hidden;
   cursor: pointer;
   box-sizing: border-box;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   user-select: none;
-  box-shadow:
-    0 4px 12px -2px rgba(0, 0, 0, 0.22),
-    0 1px 3px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, opacity 0.22s ease, filter 0.22s ease;
+  transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-/* Floating Card Hover Elevation */
+/* Clean hover: Subtle brightness without any geometric displacement to prevent house bump */
 .board-cell:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow:
-    0 14px 28px -4px rgba(0, 0, 0, 0.35),
-    0 5px 12px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 1);
-  border-color: #cbd5e1;
+  transform: none;
+  filter: brightness(1.03);
   z-index: 15;
 }
 
@@ -278,6 +271,15 @@
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
+  border-left: 1.5px solid #0f172a !important;
+}
+
+.board-cell.tile-edge-top {
+  border-bottom: 2px solid #0f172a !important;
+}
+
+.board-cell.tile-edge-bottom {
+  border-top: 2px solid #0f172a !important;
 }
 
 .board-cell.tile-edge-top .tile-header-bar,
@@ -295,16 +297,9 @@
   box-sizing: border-box !important;
   overflow: hidden !important;
   border-radius: 0 !important;
-  background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 82%, black) 100%) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-.board-cell.tile-edge-top .tile-header-bar {
-  border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
-}
-
-.board-cell.tile-edge-bottom .tile-header-bar {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: var(--accent) !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .board-cell.tile-edge-top .tile-footer-bar,
@@ -325,14 +320,6 @@
   overflow: hidden !important;
 }
 
-.board-cell.tile-edge-top .tile-footer-bar {
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-
-.board-cell.tile-edge-bottom .tile-footer-bar {
-  border-top: 1px solid #e2e8f0 !important;
-}
-
 /* ── Left & Right Edges: Horizontal Card Slice (flex-direction: row, vertical text) ── */
 .board-cell.tile-edge-left,
 .board-cell.tile-edge-right {
@@ -340,6 +327,15 @@
   flex-direction: row !important;
   justify-content: space-between !important;
   align-items: stretch !important;
+  border-top: 1.5px solid #0f172a !important;
+}
+
+.board-cell.tile-edge-left {
+  border-right: 2px solid #0f172a !important;
+}
+
+.board-cell.tile-edge-right {
+  border-left: 2px solid #0f172a !important;
 }
 
 .board-cell.tile-edge-left .tile-header-bar,
@@ -357,16 +353,9 @@
   box-sizing: border-box !important;
   overflow: hidden !important;
   border-radius: 0 !important;
-  background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 82%, black) 100%) !important;
-  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35);
-}
-
-.board-cell.tile-edge-left .tile-header-bar {
-  border-left: 1px solid rgba(0, 0, 0, 0.12) !important;
-}
-
-.board-cell.tile-edge-right .tile-header-bar {
-  border-right: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: var(--accent) !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .board-cell.tile-edge-left .tile-footer-bar,
@@ -564,6 +553,164 @@
 }
 
 /* ==========================================================================
+   SEAMLESS SPECIAL ACTION TILES: (TAX, BANK, GOLD RESERVE, CHANCE)
+   Completely seamless, full-tile distinct colors with clean simple name only
+   ========================================================================== */
+.board-cell.tile-is-special {
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  padding: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+/* Maintain crisp continuous inter-tile dividers */
+.board-cell.tile-is-special.tile-edge-top,
+.board-cell.tile-is-special.tile-edge-bottom {
+  border-left: 1.5px solid #0f172a !important;
+}
+
+.board-cell.tile-is-special.tile-edge-left,
+.board-cell.tile-is-special.tile-edge-right {
+  border-top: 1.5px solid #0f172a !important;
+}
+
+.board-cell.tile-is-special.tile-edge-top {
+  border-bottom: 2px solid #0f172a !important;
+}
+
+.board-cell.tile-is-special.tile-edge-bottom {
+  border-top: 2px solid #0f172a !important;
+}
+
+.board-cell.tile-is-special.tile-edge-left {
+  border-right: 2px solid #0f172a !important;
+}
+
+.board-cell.tile-is-special.tile-edge-right {
+  border-left: 2px solid #0f172a !important;
+}
+
+.tile-seamless-special {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  user-select: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Subtle luxury inner radial lighting */
+.tile-seamless-special::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.22) 0%, transparent 68%) !important;
+  pointer-events: none !important;
+}
+
+.board-cell.tile-is-special:hover .tile-seamless-special {
+  filter: brightness(1.08) !important;
+}
+
+.board-cell.tile-is-special:hover .tile-seamless-img {
+  transform: scale(1.06) !important;
+}
+
+/* 4 distinct, rich, vibrant seamless colors */
+.tile-seamless-special.tile-seamless-tax {
+  background: linear-gradient(155deg, #e11d48 0%, #be123c 55%, #881337 100%) !important;
+  box-shadow: inset 0 0 16px rgba(136, 19, 55, 0.6) !important;
+}
+
+.tile-seamless-special.tile-seamless-bank {
+  background: linear-gradient(155deg, #0284c7 0%, #0369a1 55%, #075985 100%) !important;
+  box-shadow: inset 0 0 16px rgba(7, 89, 133, 0.6) !important;
+}
+
+.tile-seamless-special.tile-seamless-gold {
+  background: linear-gradient(155deg, #d97706 0%, #b45309 55%, #78350f 100%) !important;
+  box-shadow: inset 0 0 16px rgba(120, 53, 15, 0.6) !important;
+}
+
+.tile-seamless-special.tile-seamless-chance {
+  background: linear-gradient(155deg, #8b5cf6 0%, #6d28d9 55%, #4c1d95 100%) !important;
+  box-shadow: inset 0 0 16px rgba(76, 29, 149, 0.6) !important;
+}
+
+/* Minimal Image Stage (Transparent PNG sitting on same seamless color) */
+.tile-seamless-img-stage {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  z-index: 1 !important;
+  padding: 2px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.tile-seamless-img {
+  width: auto !important;
+  height: auto !important;
+  max-width: 95% !important;
+  max-height: 95% !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.42)) !important;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* Top & Bottom: Vertical Column Layout */
+.tile-edge-top .tile-seamless-special,
+.tile-edge-bottom .tile-seamless-special {
+  padding: 3px 2px 4px 2px !important;
+  gap: 1px !important;
+}
+
+/* Left & Right: Balanced Column Layout */
+.tile-edge-left .tile-seamless-special,
+.tile-edge-right .tile-seamless-special {
+  padding: 3px 4px 3px 4px !important;
+  gap: 1px !important;
+}
+
+/* Simple, bold, ultra-clean typography */
+.tile-seamless-name {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 850 !important;
+  font-size: clamp(5.6px, 0.78vw, 7.4px) !important;
+  color: #ffffff !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+  white-space: normal !important;
+  word-break: keep-all !important;
+  position: relative !important;
+  z-index: 2 !important;
+  padding: 1px 2px !important;
+  max-width: 98% !important;
+  flex-shrink: 0 !important;
+}
+
+/* ==========================================================================
    MIDDLE GRAPHIC STAGE (Seamless Transparent Asset Fitting, Big Landmark)
    ========================================================================== */
 .tile-graphic-stage {
@@ -601,6 +748,84 @@
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.16));
 }
 
+/* ==========================================================================
+   HOUSE ICONS: Attached flush to inner frame border, pointing into center board
+   ========================================================================== */
+.tile-border-house-icon {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Sits flush on the 2px inner frame border, pointing cleanly into the center diorama */
+.tile-border-house-icon.edge-bottom {
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  filter: drop-shadow(0 -1.5px 3px rgba(0, 0, 0, 0.25));
+}
+
+.tile-border-house-icon.edge-top {
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  filter: drop-shadow(0 1.5px 3px rgba(0, 0, 0, 0.25));
+}
+
+.tile-border-house-icon.edge-left {
+  left: 100%;
+  top: 50%;
+  transform: translate(0, -50%);
+  filter: drop-shadow(1.5px 0 3px rgba(0, 0, 0, 0.25));
+}
+
+.tile-border-house-icon.edge-right {
+  left: 0;
+  top: 50%;
+  transform: translate(-100%, -50%);
+  filter: drop-shadow(-1.5px 0 3px rgba(0, 0, 0, 0.25));
+}
+
+.tile-border-house-icon.is-default-owned {
+  opacity: 0.98;
+}
+
+.tile-border-house-icon.is-developed {
+  opacity: 1;
+}
+
+/* NO HOVER BUMP: Stays 100% stationary on the inner frame border */
+.board-tile-wrapper:hover .tile-border-house-icon.edge-bottom {
+  transform: translate(-50%, -100%);
+}
+
+.board-tile-wrapper:hover .tile-border-house-icon.edge-top {
+  transform: translate(-50%, 0);
+}
+
+.board-tile-wrapper:hover .tile-border-house-icon.edge-left {
+  transform: translate(0, -50%);
+}
+
+.board-tile-wrapper:hover .tile-border-house-icon.edge-right {
+  transform: translate(-100%, -50%);
+}
+
+@media (max-width: 768px) {
+  .tile-border-house-icon svg {
+    transform: scale(0.9);
+  }
+}
+
+@media (max-height: 540px) {
+  .tile-border-house-icon svg {
+    transform: scale(0.85);
+  }
+}
+
 
 
 /* Base Wrapper for Tiles & Corners: allows token dock to sit on the perimeter road */
@@ -618,7 +843,7 @@
 /* (Tokens dock styling defined in dedicated section at end of file) */
 
 /* ==========================================================================
-   4 REFINED CORNER CELLS: Floating Separated Cards
+   4 CORNER CELLS: Flush with Solid Grid Container
    ========================================================================== */
 .board-corner-cell {
   display: flex !important;
@@ -628,23 +853,37 @@
   height: 100% !important;
   width: 100% !important;
   background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
-  border: 1px solid rgba(226, 232, 240, 0.95);
+  border: none;
   box-sizing: border-box;
-  border-radius: 6px !important;
+  border-radius: 0 !important;
   overflow: hidden;
-  box-shadow:
-    0 5px 14px -2px rgba(0, 0, 0, 0.22),
-    0 1px 3px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.board-corner-cell.corner-step-0 {
+  border-right: 1.5px solid #0f172a !important;
+  border-top: 1.5px solid #0f172a !important;
+}
+
+.board-corner-cell.corner-step-8 {
+  border-left: 1.5px solid #0f172a !important;
+  border-top: 1.5px solid #0f172a !important;
+}
+
+.board-corner-cell.corner-step-16 {
+  border-right: 1.5px solid #0f172a !important;
+  border-bottom: 1.5px solid #0f172a !important;
+}
+
+.board-corner-cell.corner-step-24 {
+  border-left: 1.5px solid #0f172a !important;
+  border-bottom: 1.5px solid #0f172a !important;
 }
 
 .board-corner-cell:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow:
-    0 14px 28px -4px rgba(0, 0, 0, 0.35),
-    0 5px 12px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform: none !important;
+  filter: brightness(1.03);
   z-index: 15;
 }
 
@@ -804,12 +1043,9 @@
   min-width: 0;
   min-height: 0;
   background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  border-radius: 6px;
-  box-shadow:
-    0 4px 14px -2px rgba(0, 0, 0, 0.15),
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  border: 2px solid #0f172a !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -818,27 +1054,52 @@
   padding: 4px;
 }
 
-/* Diorama — pure, clean emblem centered on board with subtle natural depth */
-.board-center-diorama {
-  width: auto;
-  height: auto;
-  max-width: 72%;
-  max-height: 70%;
-  object-fit: contain;
-  display: block;
+/* Authentic Board Center Brand Emblem (Classic, Clean, Non-AI) */
+.board-center-brand {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   user-select: none;
   pointer-events: none;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.25s ease, transform 0.25s ease;
   opacity: 1;
-  transform: scale(1);
 }
 
-/* Hide center image properly when announcement is active */
-.board-center-diorama.diorama-hidden {
+.board-center-brand.brand-hidden {
   opacity: 0;
-  transform: scale(0.92);
-  pointer-events: none;
+  transform: translate(-50%, -46%) scale(0.95);
+}
+
+.brand-logo-text {
+  font-family: 'Cinzel', 'Outfit', 'Plus Jakarta Sans', serif;
+  font-size: clamp(14px, 2.2vw, 22px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #1e293b;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.brand-tagline {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(7px, 1vw, 9.5px);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #b45309;
+  text-transform: uppercase;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-top: 1px solid #fde68a;
+  border-bottom: 1px solid #fde68a;
 }
 
 /* Clean Floating Action Bar (Dice + Roll / End Turn) — No Wrapping Card Container */
@@ -940,34 +1201,43 @@
    ========================================================================== */
 .board-center-announcement-card {
   position: absolute;
-  top: 45%;
+  top: 44%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(90%, 195px);
-  padding: 8px 12px;
-  background: #ffffff;
-  border-radius: 8px;
+  width: min(88%, clamp(210px, 30vw, 320px));
+  padding: clamp(10px, 1.8vw, 16px) clamp(12px, 2.2vw, 20px);
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  border-radius: clamp(12px, 1.8vw, 18px);
   border: 1.5px solid rgba(226, 232, 240, 0.95);
   box-shadow:
-    0 14px 34px -4px rgba(15, 23, 42, 0.18),
-    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 20px 48px -10px rgba(15, 23, 42, 0.22),
+    0 6px 16px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 5px;
+  gap: clamp(5px, 1vw, 8px);
   cursor: pointer;
   z-index: 30;
   box-sizing: border-box;
-  animation: announcementCenterPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  animation: announcementCenterPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.board-center-announcement-card:hover {
+  transform: translate(-50%, -52%) scale(1.02);
+  box-shadow:
+    0 24px 54px -8px rgba(15, 23, 42, 0.28),
+    0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes announcementCenterPop {
   from {
     opacity: 0;
-    transform: translate(-50%, -44%) scale(0.9);
+    transform: translate(-50%, -42%) scale(0.88);
   }
   to {
     opacity: 1;
@@ -977,70 +1247,104 @@
 
 .center-announcement-badge {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 8px;
+  font-size: clamp(8.5px, 1.1vw, 10.5px);
   font-weight: 850;
-  padding: 2.5px 8px;
+  padding: 3px clamp(8px, 1.4vw, 13px);
   border-radius: 9999px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   color: #ffffff;
   background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
   white-space: nowrap;
 }
 
-/* Event-type themed badges */
+/* Event-type themed badges and card accents */
+.board-center-announcement-card.announcement-type-buy {
+  border-top: 3.5px solid #10b981;
+}
 .board-center-announcement-card.announcement-type-buy .center-announcement-badge {
   background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
 }
 
-.board-center-announcement-card.announcement-type-salary .center-announcement-badge {
+.board-center-announcement-card.announcement-type-rent {
+  border-top: 3.5px solid #f59e0b;
+}
+.board-center-announcement-card.announcement-type-rent .center-announcement-badge {
   background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
 }
 
+.board-center-announcement-card.announcement-type-salary {
+  border-top: 3.5px solid #3b82f6;
+}
+.board-center-announcement-card.announcement-type-salary .center-announcement-badge {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.board-center-announcement-card.announcement-type-chance {
+  border-top: 3.5px solid #8b5cf6;
+}
 .board-center-announcement-card.announcement-type-chance .center-announcement-badge {
   background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
-  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
 }
 
+.board-center-announcement-card.announcement-type-tax,
+.board-center-announcement-card.announcement-type-jail {
+  border-top: 3.5px solid #ef4444;
+}
 .board-center-announcement-card.announcement-type-tax .center-announcement-badge,
 .board-center-announcement-card.announcement-type-jail .center-announcement-badge {
   background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
 .center-announcement-body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: clamp(4px, 0.8vw, 7px);
   width: 100%;
-}
-
-.center-announcement-msg {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  color: #0f172a;
-  font-size: 11px;
-  font-weight: 750;
-  line-height: 1.25;
-  letter-spacing: 0.1px;
-  max-width: 100%;
-  word-break: break-word;
 }
 
 .center-announcement-amount {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  color: #059669;
-  font-size: 14px;
+  color: #0f172a;
+  font-size: clamp(17px, 3vw, 26px);
   font-weight: 900;
-  letter-spacing: -0.3px;
-  line-height: 1.1;
+  letter-spacing: -0.4px;
+  line-height: 1;
 }
 
 .center-announcement-amount.is-plus {
   color: #059669;
+}
+
+.center-announcement-amount.is-minus {
+  color: #dc2626;
+}
+
+.center-announcement-msg {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #334155;
+  font-size: clamp(11.5px, 1.4vw, 13px);
+  font-weight: 750;
+  line-height: 1.3;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.center-announcement-dismiss-hint {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(7.5px, 0.9vw, 9px);
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-top: 1px;
 }
 
 /* ==========================================================================
@@ -1211,7 +1515,7 @@
     box-shadow: 0 14px 36px -8px rgba(0,0,0,0.45), 0 4px 12px -3px rgba(0,0,0,0.25);
   }
 
-  .board-grid-9x9 { gap: 4px; }
+  .board-grid-9x9 { gap: 0; }
 
   .tile-header-label { font-size: clamp(5px, 0.9vw, 7px); }
 }
@@ -1243,9 +1547,7 @@
     box-shadow: 0 14px 36px -8px rgba(0,0,0,0.45), 0 4px 12px -3px rgba(0,0,0,0.25);
   }
 
-  .board-grid-9x9 { gap: 2.5px; }
-
-  .board-cell { border-radius: 4px !important; }
+  .board-grid-9x9 { gap: 0; }
 
   .board-cell.tile-edge-bottom .tile-header-bar,
   .board-cell.tile-edge-top .tile-header-bar {
@@ -1306,7 +1608,7 @@
     --board-v-inset: 130px;
   }
 
-  .board-grid-9x9 { gap: 2px; }
+  .board-grid-9x9 { gap: 0; }
   .tile-header-label { font-size: 5.5px; letter-spacing: -0.4px; }
   .center-action-dock { padding: 4px 8px; gap: 5px; }
 }
@@ -1333,9 +1635,8 @@
   .board-grid-9x9 {
     grid-template-columns: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
     grid-template-rows: minmax(0, 1.45fr) repeat(7, minmax(0, 1fr)) minmax(0, 1.45fr);
-    gap: 2.5px;
+    gap: 0;
   }
-  .board-cell { border-radius: 4px !important; }
 
   .board-cell.tile-edge-bottom .tile-header-bar,
   .board-cell.tile-edge-top .tile-header-bar {

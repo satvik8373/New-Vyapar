@@ -62,11 +62,14 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
   const [secondsLeft, setSecondsLeft] = useState<number>(30);
 
   useEffect(() => {
-    if (diceState.rolling || isHopping) {
-      return;
-    }
     const initialDuration = phase === 'TILE_ACTION' || phase === 'RESOLVING' ? 15 : 30;
     setSecondsLeft(initialDuration);
+  }, [activePlayerIndex, phase]);
+
+  useEffect(() => {
+    if (diceState.rolling || isHopping || engineState.isPaused) {
+      return;
+    }
 
     const interval = setInterval(() => {
       setSecondsLeft((prev) => {
@@ -79,10 +82,11 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activePlayerIndex, phase, diceState.rolling, isHopping]);
+  }, [diceState.rolling, isHopping, engineState.isPaused]);
 
-  // When timer hits 0: auto-execute so game never hangs
+  // When timer hits 0: auto-execute so game never hangs (never when paused)
   useEffect(() => {
+    if (engineState.isPaused) return;
     if (secondsLeft === 0 && !diceState.rolling && !isHopping) {
       if (isHumanTurn) {
         if (canRoll) {
@@ -94,29 +98,27 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
         }
       }
     }
-  }, [secondsLeft, isHumanTurn, canRoll, canEndTurn, phase, diceState.rolling, isHopping, engine]);
+  }, [secondsLeft, isHumanTurn, canRoll, canEndTurn, phase, diceState.rolling, isHopping, engine, engineState.isPaused]);
 
   const handleRollClick = () => {
-    if (canRoll) {
+    if (canRoll && !engineState.isPaused) {
       engine.requestRoll();
     }
   };
 
   const handleEndTurnClick = () => {
-    if (canEndTurn) {
+    if (canEndTurn && !engineState.isPaused) {
       engine.endTurn();
     }
   };
 
   return (
     <div className={`board-center-canvas ${isDimmed ? 'center-dimmed-on-hover' : ''}`}>
-      {/* 1. Center Gujarat Heritage & Progress Diorama (Clean & Proportional) */}
-      <img
-        src="/assets/images/board_center_element.png"
-        alt="Gujarat Heritage & Progress Diorama"
-        className={`board-center-diorama ${activeAnnouncement ? 'diorama-hidden' : ''}`}
-        loading="eager"
-      />
+      {/* 1. Clean, Elegant Board Center Brand Emblem */}
+      <div className={`board-center-brand ${activeAnnouncement ? 'brand-hidden' : ''}`}>
+        <div className="brand-logo-text">NAVO VYAPAR</div>
+        <div className="brand-tagline">GUJARAT BUSINESS BOARD</div>
+      </div>
 
       {/* 2. Center Stage In-Game Announcement Card (Not a notification toast) */}
       {activeAnnouncement && (
@@ -129,12 +131,13 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
             {activeAnnouncement.title}
           </span>
           <div className="center-announcement-body">
-            <span className="center-announcement-msg">{activeAnnouncement.message}</span>
             {activeAnnouncement.amount !== undefined && (
-              <span className={`center-announcement-amount ${activeAnnouncement.amountType === 'plus' ? 'is-plus' : ''}`}>
-                {activeAnnouncement.amountType === 'plus' ? '+' : ''}₹{activeAnnouncement.amount.toLocaleString()}
+              <span className={`center-announcement-amount ${activeAnnouncement.amountType === 'plus' ? 'is-plus' : 'is-minus'}`}>
+                {activeAnnouncement.amountType === 'plus' ? '+' : '-'}₹{activeAnnouncement.amount.toLocaleString()}
               </span>
             )}
+            <span className="center-announcement-msg">{activeAnnouncement.message}</span>
+            <span className="center-announcement-dismiss-hint">tap to dismiss</span>
           </div>
         </div>
       )}
@@ -146,7 +149,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
           size={isDesktop ? 44 : 36}
           value={diceState.value}
           isRolling={diceState.rolling}
-          canRoll={canRoll}
+          canRoll={canRoll && !engineState.isPaused}
           onClick={handleRollClick}
         />
 
@@ -154,11 +157,12 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
         {canRoll && !isInJail && (
           <button
             type="button"
-            className="board-center-action-btn btn-roll pulse-roll"
+            className={`board-center-action-btn btn-roll ${engineState.isPaused ? '' : 'pulse-roll'}`}
             onClick={handleRollClick}
+            disabled={Boolean(engineState.isPaused)}
           >
             <CasinoIcon sx={{ fontSize: isDesktop ? 18 : 15 }} />
-            <span>Roll ({secondsLeft}s)</span>
+            <span>{engineState.isPaused ? `Paused (${secondsLeft}s)` : `Roll (${secondsLeft}s)`}</span>
           </button>
         )}
 
@@ -169,14 +173,15 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
               type="button"
               className="board-center-action-btn btn-roll"
               onClick={handleRollClick}
+              disabled={Boolean(engineState.isPaused)}
             >
               <CasinoIcon sx={{ fontSize: 14 }} />
-              <span>Roll Doubles ({secondsLeft}s)</span>
+              <span>{engineState.isPaused ? 'Paused' : `Roll 6 to Escape (${secondsLeft}s)`}</span>
             </button>
             <button
               type="button"
               className="board-center-action-btn btn-jail-pay"
-              disabled={(activePlayer?.balance ?? 0) < 500}
+              disabled={(activePlayer?.balance ?? 0) < 500 || Boolean(engineState.isPaused)}
               onClick={() => engine.payJailFine()}
             >
               <MonetizationOnIcon sx={{ fontSize: 13 }} />
@@ -186,6 +191,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
               <button
                 type="button"
                 className="board-center-action-btn btn-jail-card"
+                disabled={Boolean(engineState.isPaused)}
                 onClick={() => engine.useGetOutOfJailCard()}
               >
                 <span>Use Card</span>
@@ -200,8 +206,9 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
             type="button"
             className="board-center-action-btn btn-end-turn"
             onClick={handleEndTurnClick}
+            disabled={Boolean(engineState.isPaused)}
           >
-            <span>End Turn ({secondsLeft}s)</span>
+            <span>{engineState.isPaused ? `Paused (${secondsLeft}s)` : `End Turn (${secondsLeft}s)`}</span>
             <SkipNextIcon sx={{ fontSize: isDesktop ? 18 : 15 }} />
           </button>
         )}
@@ -214,15 +221,14 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
               alignItems: 'center',
               gap: '6px',
               padding: '5px 12px',
-              borderRadius: '20px',
-              background: 'rgba(15, 23, 42, 0.82)',
+              borderRadius: '16px',
+              background: '#0f172a',
               color: '#ffffff',
               fontSize: isDesktop ? '11px' : '10px',
-              fontWeight: 700,
+              fontWeight: 800,
               fontFamily: '"Plus Jakarta Sans", sans-serif',
-              backdropFilter: 'blur(8px)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-              border: '1px solid rgba(255,255,255,0.15)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              border: '1px solid rgba(255,255,255,0.2)',
               whiteSpace: 'nowrap'
             }}
           >
@@ -232,10 +238,9 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
                 height: '8px',
                 borderRadius: '50%',
                 backgroundColor: activePlayer.tokenColor,
-                boxShadow: `0 0 8px ${activePlayer.tokenColor}`
               }}
             />
-            <span>{activePlayer.name}'s Turn ({secondsLeft}s)</span>
+            <span>{activePlayer.name}'s Turn {engineState.isPaused ? '(Paused)' : `(${secondsLeft}s)`}</span>
           </div>
         )}
       </div>
