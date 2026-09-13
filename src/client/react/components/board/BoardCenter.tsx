@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Realistic3DDice } from '../common/Realistic3DDice';
+import { CenterBoardStageCard } from './CenterBoardStageCard';
 import { GameEngine, GameEngineState } from '../../../game-engine/GameEngine';
 import CasinoIcon from '@mui/icons-material/Casino';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -37,7 +38,8 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
     phase,
     diceState,
     hoppingState,
-    activeAnnouncement
+    activeAnnouncement,
+    activeRentTransaction
   } = engineState;
 
   const activePlayer = players[activePlayerIndex] || null;
@@ -114,39 +116,42 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
 
   return (
     <div className={`board-center-canvas ${isDimmed ? 'center-dimmed-on-hover' : ''}`}>
+      {/* 0. High-Resolution Authentic Gujarat Heritage Board Center Artwork */}
+      <img
+        src="/assets/images/center_board.png"
+        alt="Navo Vyapar Gujarat Board Center"
+        className="board-center-bg-img"
+        draggable={false}
+      />
+
       {/* 1. Clean, Elegant Board Center Brand Emblem */}
-      <div className={`board-center-brand ${activeAnnouncement ? 'brand-hidden' : ''}`}>
+      <div className={`board-center-brand ${activeAnnouncement || activeRentTransaction ? 'brand-hidden' : ''}`}>
         <div className="brand-logo-text">NAVO VYAPAR</div>
         <div className="brand-tagline">GUJARAT BUSINESS BOARD</div>
       </div>
 
-      {/* 2. Center Stage In-Game Announcement Card (Not a notification toast) */}
-      {activeAnnouncement && (
-        <div
-          className={`board-center-announcement-card announcement-type-${activeAnnouncement.type || 'info'}`}
-          onClick={() => engine.clearAnnouncement()}
-          title="Click to dismiss"
-        >
-          <span className="center-announcement-badge">
-            {activeAnnouncement.title}
-          </span>
-          <div className="center-announcement-body">
-            {activeAnnouncement.amount !== undefined && (
-              <span className={`center-announcement-amount ${activeAnnouncement.amountType === 'plus' ? 'is-plus' : 'is-minus'}`}>
-                {activeAnnouncement.amountType === 'plus' ? '+' : '-'}₹{activeAnnouncement.amount.toLocaleString()}
-              </span>
-            )}
-            <span className="center-announcement-msg">{activeAnnouncement.message}</span>
-            <span className="center-announcement-dismiss-hint">tap to dismiss</span>
-          </div>
-        </div>
+      {/* 2. Unified Center Stage Event Card (Rent Payments & Game Announcements) */}
+      {activeRentTransaction && (
+        <CenterBoardStageCard
+          key={activeRentTransaction.id}
+          rentTransaction={activeRentTransaction}
+          onDismiss={() => engine.dismissRentGraphic()}
+        />
+      )}
+
+      {!activeRentTransaction && activeAnnouncement && (
+        <CenterBoardStageCard
+          key={activeAnnouncement.id}
+          announcement={activeAnnouncement}
+          onDismiss={() => engine.clearAnnouncement()}
+        />
       )}
 
       {/* 3. Direct Floating Dice & Action Area (No Heavy Container Box, Simple & Clean) */}
       <div className="center-actions-simple">
         {/* The 3D Dice directly on tabletop */}
         <Realistic3DDice
-          size={isDesktop ? 44 : 36}
+          size={isDesktop ? 22 : 18}
           value={diceState.value}
           isRolling={diceState.rolling}
           canRoll={canRoll && !engineState.isPaused}
@@ -161,7 +166,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
             onClick={handleRollClick}
             disabled={Boolean(engineState.isPaused)}
           >
-            <CasinoIcon sx={{ fontSize: isDesktop ? 18 : 15 }} />
+            <CasinoIcon sx={{ fontSize: isDesktop ? 13 : 11 }} />
             <span>{engineState.isPaused ? `Paused (${secondsLeft}s)` : `Roll (${secondsLeft}s)`}</span>
           </button>
         )}
@@ -175,8 +180,8 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
               onClick={handleRollClick}
               disabled={Boolean(engineState.isPaused)}
             >
-              <CasinoIcon sx={{ fontSize: 14 }} />
-              <span>{engineState.isPaused ? 'Paused' : `Roll 6 to Escape (${secondsLeft}s)`}</span>
+              <CasinoIcon sx={{ fontSize: 11 }} />
+              <span>{engineState.isPaused ? 'Paused' : `Roll 6 (${secondsLeft}s)`}</span>
             </button>
             <button
               type="button"
@@ -184,7 +189,7 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
               disabled={(activePlayer?.balance ?? 0) < 500 || Boolean(engineState.isPaused)}
               onClick={() => engine.payJailFine()}
             >
-              <MonetizationOnIcon sx={{ fontSize: 13 }} />
+              <MonetizationOnIcon sx={{ fontSize: 11 }} />
               <span>Pay ₹500</span>
             </button>
             {hasJailCard && (
@@ -209,38 +214,21 @@ export const BoardCenter: React.FC<BoardCenterProps> = ({ isDimmed = false }) =>
             disabled={Boolean(engineState.isPaused)}
           >
             <span>{engineState.isPaused ? `Paused (${secondsLeft}s)` : `End Turn (${secondsLeft}s)`}</span>
-            <SkipNextIcon sx={{ fontSize: isDesktop ? 18 : 15 }} />
+            <SkipNextIcon sx={{ fontSize: isDesktop ? 13 : 11 }} />
           </button>
         )}
 
-        {/* State 4: Opponent Turn Indicator */}
+        {/* State 4: Sleek Opponent Turn Nameplate */}
         {!isHumanTurn && activePlayer && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '5px 12px',
-              borderRadius: '16px',
-              background: '#0f172a',
-              color: '#ffffff',
-              fontSize: isDesktop ? '11px' : '10px',
-              fontWeight: 800,
-              fontFamily: '"Plus Jakarta Sans", sans-serif',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              whiteSpace: 'nowrap'
-            }}
-          >
+          <div className="center-turn-nameplate">
             <span
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: activePlayer.tokenColor,
-              }}
+              className="turn-nameplate-dot"
+              style={{ backgroundColor: activePlayer.tokenColor }}
             />
-            <span>{activePlayer.name}'s Turn {engineState.isPaused ? '(Paused)' : `(${secondsLeft}s)`}</span>
+            <span className="turn-nameplate-name">{activePlayer.name}</span>
+            <span className="turn-nameplate-timer">
+              {engineState.isPaused ? 'Paused' : `${secondsLeft}s`}
+            </span>
           </div>
         )}
       </div>

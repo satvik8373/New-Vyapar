@@ -8,9 +8,18 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "dev:server": "tsx src/server/index.ts",
-    "test": "tsx tests/game-loop.test.ts"
+    "test": "tsx tests/game-loop.test.ts",
+    "cap:sync": "npm run build && cap sync",
+    "cap:android": "cap open android",
+    "cap:ios": "cap open ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/screen-orientation": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@colyseus/schema": "^5.0.27",
     "@colyseus/ws-transport": "^0.18.2",
     "@emotion/react": "^11.13.0",
@@ -32,6 +41,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

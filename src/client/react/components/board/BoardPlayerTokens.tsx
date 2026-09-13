@@ -52,6 +52,19 @@ function getPlayerIdentityIndex(player: PlayerData): number {
   return 0;
 }
 
+function getResponsiveTokenSize(): number {
+  if (typeof window === 'undefined') return 13;
+  const w = window.innerWidth;
+  // Desktop display (>= 1024px)
+  if (w >= 1024) return 14;
+  // Tablet / Medium display (>= 768px)
+  if (w >= 768) return 13.5;
+  // Standard Mobile (< 768px)
+  if (w >= 400) return 13;
+  // Compact Mobile (< 400px)
+  return 12;
+}
+
 export const BoardPlayerTokens: React.FC<BoardPlayerTokensProps> = ({
   players,
   activePlayerId,
@@ -62,8 +75,17 @@ export const BoardPlayerTokens: React.FC<BoardPlayerTokensProps> = ({
   if (!players || players.length === 0) return null;
 
   const count = players.length;
-  // Car size: height must be comfortably smaller than road lane width (24px road → 18px car max)
-  const tokenSize = count === 1 ? 18 : count === 2 ? 15 : 13;
+  // Fixed uniform car size across all players — never changes between tiles
+  const [tokenSize, setTokenSize] = React.useState<number>(() => getResponsiveTokenSize());
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setTokenSize(getResponsiveTokenSize());
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const isVertical = edge === 'left' || edge === 'right' || (edge === 'corner' && (step === 8 || step === 24));
 
   return (
@@ -83,10 +105,10 @@ export const BoardPlayerTokens: React.FC<BoardPlayerTokensProps> = ({
         const isActive = p.id === activePlayerId;
         const theme = PLAYER_COLOR_THEMES[identityIdx % 4];
 
-        // Staggered starting grid positions when multiple cars occupy the lane
-        const isStaggered = count >= 3;
-        const lateralOffset = isStaggered ? (idx % 2 === 0 ? -3 : 3) : 0;
-        const longitudinalMargin = idx > 0 ? (count >= 3 ? -10 : 3) : 0;
+        // Staggered grid positions so multiple cars share the lane cleanly without obscuring each other
+        const isStaggered = count >= 2;
+        const lateralOffset = isStaggered ? (idx % 2 === 0 ? -2 : 2) : 0;
+        const longitudinalMargin = idx > 0 ? (count >= 3 ? -8 : -3) : 0;
 
         return (
           <motion.div

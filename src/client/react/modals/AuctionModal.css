@@ -1,0 +1,685 @@
+/* ==========================================================================
+   NAVO VYAPAR — THEME-BASED RESPONSIVE AUCTION MODAL & DEED SHEET
+   Theme: Authentic Gujarat Board Game Aesthetic (CandyButton, Coin, Gold & Slate)
+   Landscape Layout: Left side Property Deed pane + Right side Auction Sheet
+   Height: Spacious in landscape (expands to 520px+ when available, smooth on mobile)
+   ========================================================================== */
+
+/* ── 1. MODAL BACKDROP ── */
+.auction-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 12px;
+  animation: auctionFadeIn 0.2s ease-out;
+  box-sizing: border-box;
+}
+
+@keyframes auctionFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── 2. MODAL CARD (GENEROUS DESKTOP SCALE, RESPONSIVE FLUID RE-COMPOSITION) ── */
+.auction-modal-card {
+  position: relative;
+  width: min(920px, 94vw);
+  height: auto;
+  min-height: min(520px, 88vh);
+  max-height: min(620px, 92vh);
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1.5px solid rgba(203, 213, 225, 0.9);
+  box-shadow:
+    0 24px 60px -12px rgba(15, 23, 42, 0.35),
+    0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  animation: auctionPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+@keyframes auctionPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── 3. 2-PANE HORIZONTAL LAYOUT ── */
+.auction-modal-layout {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   LEFT PANE: AUTHENTIC GUJARAT PROPERTY DEED (NAVO VYAPAR THEME)
+   ========================================================================== */
+.auction-deed-pane {
+  flex: 0 0 clamp(260px, 28vw, 300px);
+  width: clamp(260px, 28vw, 300px);
+  background: #fdfefe;
+  border-right: 1.5px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* Deed Header Ribbon */
+.deed-header-ribbon {
+  padding: 10px 12px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.deed-sub-label {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.deed-city-heading {
+  margin: 2px 0 0;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 215px;
+}
+
+.deed-gujarati-heading {
+  font-family: 'Anek Gujarati', sans-serif;
+  font-size: 11.5px;
+  font-weight: 750;
+  color: #fef08a;
+  line-height: 1.1;
+  margin-top: 1px;
+}
+
+/* Figurine / Art Stage */
+.deed-art-stage {
+  height: clamp(120px, 18vh, 160px);
+  background: var(--deed-accent, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+.deed-art-image {
+  width: auto;
+  height: auto;
+  max-height: 94%;
+  max-width: 94%;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+}
+
+/* Deed Body Details */
+.deed-details-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.deed-group-pill {
+  align-self: center;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(10.5px, 1vw, 12px);
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1px solid;
+  background: #ffffff;
+}
+
+.deed-rates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.deed-rate-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rate-lbl {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(10px, 0.95vw, 11px);
+  font-weight: 650;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rate-val {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(13px, 1.1vw, 15px);
+  font-weight: 850;
+  color: #0f172a;
+}
+
+.rate-val.text-emerald {
+  color: #059669;
+}
+
+.rate-val.text-muted {
+  color: #64748b;
+}
+
+.deed-blurb-text {
+  margin: 0;
+  font-size: clamp(11px, 1vw, 12.5px);
+  line-height: 1.45;
+  color: #64748b;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   RIGHT PANE: AUCTION TRADING SHEET (ROOMY, THEMED, NO CUTOFFS)
+   ========================================================================== */
+.auction-sheet-pane {
+  flex: 1;
+  min-width: 0;
+  padding: clamp(14px, 2vw, 22px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(10px, 1.4vh, 16px);
+  background: #ffffff;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* Header Strip */
+.sheet-header-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+}
+
+.sheet-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sheet-auction-badge {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.sheet-round-badge {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 750;
+  color: #64748b;
+}
+
+.sheet-city-indicator {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.sheet-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sheet-timer-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sheet-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.sheet-close-btn:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+/* Current Bid Showcase */
+.sheet-current-bid-box {
+  background: #edf6f3;
+  border: 1px solid #d5e9e0;
+  border-radius: 14px;
+  padding: clamp(12px, 1.6vh, 16px) clamp(14px, 1.6vw, 18px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.current-bid-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.bid-box-label {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(11px, 1vw, 12.5px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.bid-box-figure {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.current-bid-right {
+  display: flex;
+  align-items: center;
+}
+
+.bid-leader-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bid-leader-name {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(13.5px, 1.2vw, 15.5px);
+  font-weight: 750;
+  color: #1e293b;
+}
+
+.bid-you-tag {
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 850;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.bid-status-pill {
+  background: #dcfce7;
+  color: #15803d;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(11.5px, 1vw, 13px);
+  font-weight: 750;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.bid-opening-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* Players Roster in Symmetrical 2x2 Grid */
+.sheet-players-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(8px, 1.2vh, 12px) clamp(10px, 1.2vw, 14px);
+  flex-shrink: 0;
+}
+
+.sheet-player-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: clamp(8px, 1.2vh, 11px) clamp(10px, 1.2vw, 14px);
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s;
+}
+
+.sheet-player-chip.status-bidding {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.sheet-player-chip.status-folded {
+  opacity: 0.55;
+  background: #fdf2f2;
+}
+
+.player-chip-info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.player-chip-name {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(12.5px, 1.2vw, 14px);
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.player-chip-you {
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 850;
+  border-radius: 3px;
+  padding: 1.5px 5px;
+  flex-shrink: 0;
+}
+
+.player-chip-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.player-chip-amt {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(12.5px, 1.2vw, 14px);
+  font-weight: 750;
+  color: #475569;
+}
+
+.player-chip-tag {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(10.5px, 1vw, 12px);
+  font-weight: 750;
+  border-radius: 999px;
+  padding: 2.5px 8px;
+}
+
+.player-chip-tag.status-bidding {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.player-chip-tag.status-inplay {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.player-chip-tag.status-folded {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Controls Deck */
+.sheet-controls-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sheet-bid-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sheet-stepper {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 3px 6px;
+  flex: 0 0 clamp(155px, 18vw, 185px);
+  height: clamp(38px, 4.8vh, 44px);
+  box-sizing: border-box;
+}
+
+.sheet-step-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  padding: 0;
+}
+
+.sheet-step-btn:hover:not(:disabled) {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.sheet-step-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sheet-step-val {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(14.5px, 1.3vw, 16.5px);
+  font-weight: 850;
+  color: #0f172a;
+  text-align: center;
+}
+
+.sheet-quick-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.sheet-quick-btn {
+  flex-shrink: 0;
+}
+
+/* Actions Row with CandyButton */
+.sheet-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: clamp(42px, 5.2vh, 48px);
+}
+
+.sheet-candy-pass {
+  flex: 0 0 clamp(115px, 13vw, 145px);
+  height: 100%;
+}
+
+.sheet-candy-bid {
+  flex: 1;
+  height: 100%;
+}
+
+/* Waiting / Outcome States */
+.sheet-waiting-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 750;
+  color: #64748b;
+}
+
+.sheet-waiting-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #064e3b;
+  border-radius: 50%;
+  animation: waitingSpin 0.85s linear infinite;
+}
+
+@keyframes waitingSpin {
+  to { transform: rotate(360deg); }
+}
+
+.sheet-outcome-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  color: #065f46;
+}
+
+/* ==========================================================================
+   PORTRAIT / NARROW VIEW ADAPTATION (STACKS VERTICALLY)
+   ========================================================================== */
+@media (max-width: 679px) and (min-height: 500px) {
+  .auction-modal-card {
+    width: min(460px, 94vw);
+    max-height: 94vh;
+    min-height: auto;
+  }
+
+  .auction-modal-layout {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .auction-deed-pane {
+    flex: 0 0 auto;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+
+  .deed-art-stage {
+    height: 85px;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+
+  .deed-art-image {
+    width: auto;
+    height: auto;
+    max-height: 94%;
+    max-width: 94%;
+    object-fit: contain;
+    object-position: center center;
+  }
+
+  .auction-sheet-pane {
+    padding: 14px 16px 16px;
+    gap: 10px;
+  }
+}

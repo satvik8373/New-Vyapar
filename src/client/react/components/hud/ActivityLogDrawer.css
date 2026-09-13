@@ -114,7 +114,6 @@
 
 .activity-log-bullet.bullet-turn {
   background: #3b82f6;
-  box-shadow: 0 0 6px #3b82f6;
 }
 
 .activity-log-bullet.bullet-roll {
@@ -123,7 +122,6 @@
 
 .activity-log-bullet.bullet-money {
   background: #10b981;
-  box-shadow: 0 0 6px #10b981;
 }
 
 .activity-log-text {

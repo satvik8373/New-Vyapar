@@ -17,10 +17,11 @@ import { ToastNotifications } from '../components/ToastNotifications';
 import { BoardDivSheet, BoardTileStep, BoardDivSheetHandle } from '../components/BoardDivSheet';
 import { BOARD_TILES } from '@shared/game-data/boardData';
 import { GameBridge } from '../../bridge/GameBridge';
-import { CandyButton } from '../components/common';
+import { CandyButton, CoinTransferAnimation } from '../components/common';
 import { CornerPlayerHUD, HUDPlayerData } from '../components/hud/CornerPlayerHUD';
 import { ActivityLogDrawer } from '../components/hud/ActivityLogDrawer';
 import { TitleDeedPopupModal } from '../modals/TitleDeedPopupModal';
+import { AuctionModal } from '../modals/AuctionModal';
 import { OpponentLeftModal } from '../modals/OpponentLeftModal';
 import { VoiceChatService, VoiceChatState } from '../../services/VoiceChatService';
 import { AuthService } from '../../firebase/authService';
@@ -659,6 +660,24 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onExitToMenu, roomCode }
         onClose={() => setViewingDeedPlayer(null)}
         onInspectTile={handleInspectTile}
       />
+
+      {/* Gujarat Public Auction Modal */}
+      <AuctionModal />
+
+      {/* Dynamic Flying Coins Transfer Animation */}
+      {engineState.activeCoinTransfer && (
+        <CoinTransferAnimation
+          key={engineState.activeCoinTransfer.id}
+          fromPlayerId={engineState.activeCoinTransfer.fromPlayerId}
+          toPlayerId={engineState.activeCoinTransfer.toPlayerId}
+          amount={engineState.activeCoinTransfer.amount}
+          fromPlayerName={engineState.activeCoinTransfer.fromPlayerName}
+          fromPlayerColor={engineState.activeCoinTransfer.fromPlayerColor}
+          toPlayerName={engineState.activeCoinTransfer.toPlayerName}
+          toPlayerColor={engineState.activeCoinTransfer.toPlayerColor}
+          onComplete={() => engine.clearCoinTransfer()}
+        />
+      )}
 
       <ToastNotifications />
     </Box>

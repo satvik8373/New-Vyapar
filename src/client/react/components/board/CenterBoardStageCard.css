@@ -1,0 +1,256 @@
+/* ==========================================================================
+   NAVO VYAPAR — SIMPLE & SOLID BOARD CENTER NOTICE
+   Clean, solid, authentic board game presentation.
+   Zero neon, zero transparency, zero clutter.
+   Strict positioning safely clear of dice and perimeter houses.
+   ========================================================================== */
+
+/* ── 1. SEAMLESS BOARD TABLETOP EVENT STAGE (NO FLOATING BOX / NO CARD BORDER) ── */
+.board-center-notice {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(280px, 85%);
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+  user-select: none;
+  cursor: pointer;
+  animation: noticePopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.board-center-notice.is-fading-out {
+  opacity: 0;
+  transform: translate(-50%, -46%) scale(0.96);
+  pointer-events: none;
+}
+
+@keyframes noticePopIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -44%) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ── 2. CLEAN PILL HEADER ── */
+.notice-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.notice-type-pill {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.notice-city-name {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.notice-dot {
+  font-weight: 900;
+  opacity: 0.55;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.notice-city-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 3. RENT SETTLEMENT: SIMPLE TWO-USER PROFILE ── */
+.notice-rent-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.notice-user-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  flex: 0 1 72px;
+  min-width: 0;
+}
+
+.notice-avatar-wrap {
+  border-radius: 50%;
+  border: 2px solid;
+  padding: 1px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notice-user-name {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 750;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 72px;
+}
+
+.notice-val-pill {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 850;
+  padding: 1.5px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.notice-val-pill.is-minus {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.notice-val-pill.is-plus {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+/* Coin Bridge */
+.notice-coin-bridge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  animation: noticeCoinStream 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes noticeCoinStream {
+  0% {
+    transform: translateX(-6px) scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(0) scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(6px) scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+/* ── 4. ANNOUNCEMENT BODY ── */
+.notice-announcement-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-align: center;
+  padding: 2px 4px;
+}
+
+.notice-amount-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.notice-amount-val.is-plus {
+  color: #059669;
+}
+
+.notice-amount-val.is-minus {
+  color: #dc2626;
+}
+
+.notice-msg-text {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: #334155;
+  text-align: center;
+  max-width: 250px;
+}
+
+/* ── 5. COMPACT ADAPTATION ── */
+@media (max-height: 440px) {
+  .board-center-notice {
+    top: 34%;
+    padding: 7px 10px;
+    gap: 4px;
+  }
+
+  .notice-user-profile {
+    flex: 0 0 66px;
+  }
+
+  .notice-user-name {
+    font-size: 9px;
+    max-width: 66px;
+  }
+
+  .notice-val-pill {
+    font-size: 9.5px;
+  }
+
+  .notice-amount-row {
+    font-size: 16px;
+  }
+
+  .notice-msg-text {
+    font-size: 10px;
+    max-width: 220px;
+  }
+}

@@ -35,12 +35,12 @@
   gap: 12px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 6px 12px 6px 8px;
+  border-radius: 9px;
+  padding: 7px 14px 7px 10px;
   box-shadow:
     0 12px 28px -4px rgba(15, 23, 42, 0.25),
     0 4px 10px rgba(15, 23, 42, 0.1);
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   z-index: 10;
 }
 
@@ -51,7 +51,7 @@
 }
 
 .deed-pure-player-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 850;
   color: #0f172a;
   letter-spacing: 0.2px;
@@ -59,7 +59,7 @@
 }
 
 .deed-pure-subtitle {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 750;
   color: #64748b;
   text-transform: uppercase;
@@ -67,9 +67,9 @@
 }
 
 .deed-pure-close-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
   color: #475569;

@@ -5,6 +5,8 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { GameEngine } from '../../../game-engine/GameEngine';
 import { BOARD_TILES } from '@shared/game-data/boardData';
@@ -19,7 +21,6 @@ export interface GameFloatingNavProps {
   onOpenSettings: () => void;
   unreadLogCount?: number;
   isPortrait?: boolean;
-  // Optional legacy props for backwards compatibility
   isMicActive?: boolean;
   isMicMuted?: boolean;
   isSpeaking?: boolean;
@@ -39,7 +40,11 @@ export const GameFloatingNav: React.FC<GameFloatingNavProps> = ({
   onOpenLogs,
   onOpenSettings,
   unreadLogCount = 0,
-  isPortrait = false
+  isPortrait = false,
+  isMicActive = false,
+  isMicMuted = false,
+  isSpeaking = false,
+  onToggleMic
 }) => {
   const engine = GameEngine.getInstance();
   const state = engine.getState();
@@ -128,7 +133,51 @@ export const GameFloatingNav: React.FC<GameFloatingNavProps> = ({
           </button>
         </Tooltip>
 
-        {/* 4. AUDIO MUTE */}
+        {/* 4. LIVE VOICE MIC */}
+        {onToggleMic && (
+          <Tooltip
+            title={
+              !isMicActive
+                ? 'Turn On Live Mic'
+                : isMicMuted
+                ? 'Unmute Mic (Currently Muted)'
+                : isSpeaking
+                ? 'Speaking… (Click to Mute)'
+                : 'Mute Mic (Live Voice Active)'
+            }
+            arrow
+            placement={isPortrait ? 'top' : 'left'}
+          >
+            <button
+              type="button"
+              className={`console-icon-btn btn-mic ${
+                !isMicActive
+                  ? 'is-mic-off'
+                  : isMicMuted
+                  ? 'is-mic-muted'
+                  : isSpeaking
+                  ? 'is-speaking'
+                  : 'is-mic-live'
+              }`}
+              onClick={onToggleMic}
+              aria-label={
+                !isMicActive
+                  ? 'Turn On Live Mic'
+                  : isMicMuted
+                  ? 'Unmute Mic'
+                  : 'Mute Mic'
+              }
+            >
+              {isMicActive && !isMicMuted ? (
+                <MicIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <MicOffIcon sx={{ fontSize: 18 }} />
+              )}
+            </button>
+          </Tooltip>
+        )}
+
+        {/* 5. AUDIO MUTE */}
         <Tooltip title={isMuted ? 'Unmute Audio' : 'Mute Audio'} arrow placement={isPortrait ? 'top' : 'left'}>
           <button
             type="button"

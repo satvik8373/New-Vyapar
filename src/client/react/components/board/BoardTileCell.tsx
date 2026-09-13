@@ -53,13 +53,13 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
   const specialImageSrc =
     tile.imageUrl ||
     (tile.type === 'TAX'
-      ? '/assets/images/cities/tile_5.png'
+      ? '/assets/images/cities/tile_tax.png'
       : tile.type === 'BANK'
-      ? '/assets/images/cities/tile_14.png'
+      ? '/assets/images/cities/tile_bank.png'
       : tile.type === 'SPECIAL'
-      ? '/assets/images/cities/tile_18.png'
+      ? '/assets/images/cities/tile_gold.png'
       : tile.type === 'CHANCE'
-      ? '/assets/images/cities/tile_22.png'
+      ? '/assets/images/cities/tile_chance.png'
       : undefined);
 
   // Distinct theme accents for each of the 4 special tiles
@@ -73,6 +73,8 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
     ? '#d97706'        // Imperial Amber Gold
     : tile.type === 'CHANCE'
     ? '#7c3aed'        // Fortune Violet
+    : tile.type === 'PORT'
+    ? '#0369a1'        // Oceanic Maritime Blue
     : '#475569';
 
   const ownerColorHex = owner
@@ -96,7 +98,7 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
 
   const isVerticalEdge = tile.edge === 'left' || tile.edge === 'right';
 
-  // Sub-component for the 25px inner header (touching center border)
+  // Sub-component for the inner header (touching center border)
   const headerContent = (
     <div
       className={`tile-header-bar ${isSpecialTile ? 'is-special-header' : ''}`}
@@ -115,6 +117,9 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
       : `AI ${owner.name.match(/\d+/)?.[0] || owner.colorName?.slice(0, 3) || '1'}`
     : '';
 
+  // Simple clean numbers without "k" (e.g. ₹2200, ₹1000, ₹600)
+  const priceText = tile.price !== null ? `₹${tile.price}` : '';
+
   const footerContent = (
     <div className={`tile-footer-bar ${isSpecialTile ? 'is-special-footer' : ''}`}>
       {owner && ownerColorHex ? (
@@ -122,7 +127,7 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
           {shortOwnerName}
         </span>
       ) : tile.price !== null ? (
-        <span className="tile-footer-price-text">₹{tile.price.toLocaleString()}</span>
+        <span className="tile-footer-price-text">{priceText}</span>
       ) : (
         <span className="tile-footer-badge-text" style={{ color: accentHex }}>
           {footerText}
@@ -158,9 +163,8 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
           '--owner-color': ownerColorHex || undefined,
           ...(ownerColorHex
             ? {
-                boxShadow: isOwnerHovered
-                  ? `0 0 16px 3px ${ownerColorHex}99, inset 0 0 0 2px ${ownerColorHex}`
-                  : `inset 0 0 0 2px ${ownerColorHex}`
+                boxShadow: `inset 0 0 0 2px ${ownerColorHex}`,
+                filter: isOwnerHovered ? 'brightness(1.06)' : undefined
               }
             : {})
         } as React.CSSProperties}
@@ -202,8 +206,7 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
                 const originalTile = DEFAULT_BOARD_TILES.find(
                   (t) => t.name.trim().toUpperCase() === tile.name.trim().toUpperCase()
                 );
-                const spriteStep = originalTile ? originalTile.step : tile.step;
-                const spriteSrc = tile.imageUrl || `/assets/images/cities/tile_${spriteStep}.png`;
+                const spriteSrc = tile.imageUrl || originalTile?.imageUrl || '/assets/images/corners/corner_start.jpg';
                 return (
                   <img
                     src={spriteSrc}
@@ -222,18 +225,35 @@ export const BoardTileCell: React.FC<BoardTileCellProps> = ({
       </div>
 
       {/* House Icon touching the road frame black border directly */}
-      {owner && tile.type === 'PROPERTY' && (
-        <div
-          className={`tile-border-house-icon edge-${tile.edge} ${houses === 0 ? 'is-default-owned' : 'is-developed'}`}
-          title={`${tile.name} • Owned by ${owner.name}${houses > 0 ? ` • ${houses === 5 ? 'Vyapar Hotel' : `${houses} Houses`}` : ''}`}
-        >
-          <BoardHouseIcon
-            houses={houses}
-            color={ownerColorHex || '#16a34a'}
-            edge={tile.edge}
-          />
-        </div>
-      )}
+      {owner && tile.type === 'PROPERTY' && (() => {
+        let cornerClass = '';
+        if (tile.edge === 'top') {
+          if (tile.gridCol === 2) cornerClass = 'near-corner-left';
+          else if (tile.gridCol === 8) cornerClass = 'near-corner-right';
+        } else if (tile.edge === 'bottom') {
+          if (tile.gridCol === 2) cornerClass = 'near-corner-left';
+          else if (tile.gridCol === 8) cornerClass = 'near-corner-right';
+        } else if (tile.edge === 'left') {
+          if (tile.gridRow === 2) cornerClass = 'near-corner-top';
+          else if (tile.gridRow === 8) cornerClass = 'near-corner-bottom';
+        } else if (tile.edge === 'right') {
+          if (tile.gridRow === 2) cornerClass = 'near-corner-top';
+          else if (tile.gridRow === 8) cornerClass = 'near-corner-bottom';
+        }
+
+        return (
+          <div
+            className={`tile-border-house-icon edge-${tile.edge} ${cornerClass} ${houses === 0 ? 'is-default-owned' : 'is-developed'}`}
+            title={`${tile.name} • Owned by ${owner.name}${houses > 0 ? ` • ${houses === 5 ? 'Vyapar Hotel' : `${houses} Houses`}` : ''}`}
+          >
+            <BoardHouseIcon
+              houses={houses}
+              color={ownerColorHex || '#16a34a'}
+              edge={tile.edge}
+            />
+          </div>
+        );
+      })()}
 
       {/* Player Car Tokens Dock - Positioned on the Perimeter Road Track */}
       <BoardPlayerTokens

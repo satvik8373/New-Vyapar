@@ -140,6 +140,46 @@
   border-color: #fecaca;
 }
 
+.console-icon-btn.btn-mic.is-mic-live {
+  color: #10b981;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  animation: consoleMicPulse 1.8s ease-in-out infinite;
+}
+
+.console-icon-btn.btn-mic.is-speaking {
+  color: #059669;
+  background: #d1fae5;
+  border-color: #34d399;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+}
+
+.console-icon-btn.btn-mic.is-mic-muted {
+  color: #ef4444;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.console-icon-btn.btn-mic.is-mic-off {
+  color: #64748b;
+  background: #ffffff;
+}
+
+.console-icon-btn.btn-mic.is-mic-off:hover {
+  color: #0284c7;
+  border-color: #bae6fd;
+  background: #f0f9ff;
+}
+
+@keyframes consoleMicPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  }
+}
+
 .console-badge {
   position: absolute;
   top: -3px;

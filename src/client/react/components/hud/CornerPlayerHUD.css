@@ -43,8 +43,8 @@
 }
 
 .minimal-hud-chip.is-turn {
-  border-color: var(--player-accent, #0f172a);
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1), 0 0 0 1px var(--player-accent, #0f172a);
+  border: 2px solid var(--player-accent, #0f172a);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 .minimal-hud-chip.is-bankrupt {

@@ -19,17 +19,39 @@ import { CandyButton } from '../components/common/CandyButton';
 import { CandyPill } from '../components/common/CandyPill';
 import './PropertySheet.css';
 
-// Scenic City & Landmark Background Photographic Map by City Name
+// Scenic City & Landmark Background Map by City Name (Secular Commercial Cities)
 const LANDMARK_SCENIC_BY_NAME: Record<string, string> = {
-  'DWARKA': '/assets/images/landmarks/dwarka.jpg',
-  'GIFT CITY': '/assets/images/landmarks/gift_city.jpg',
-  'SURAT': '/assets/images/landmarks/surat_diamond.jpg',
-  'SURAT DIAMOND': '/assets/images/landmarks/surat_diamond.jpg',
-  'SOMNATH': '/assets/images/landmarks/somnath.jpg',
-  'AMBAJI': '/assets/images/landmarks/ambaji.jpg',
-  'STATUE OF UNITY': '/assets/images/landmarks/statue_of_unity.jpg',
-  'KANDLA PORT': '/assets/images/landmarks/kandla_port.jpg',
-  'KANDLA': '/assets/images/landmarks/kandla_port.jpg'
+  'MORBI': '/assets/images/cities/morbi.png',
+  'PATAN': '/assets/images/cities/patan.png',
+  'BHARUCH': '/assets/images/cities/bharuch.png',
+  'MEHSANA': '/assets/images/cities/mehsana.png',
+  'NADIAD': '/assets/images/cities/nadiad.png',
+  'VAPI': '/assets/images/cities/vapi.png',
+  'JUNAGADH': '/assets/images/cities/junagadh.png',
+  'RAJKOT': '/assets/images/cities/rajkot.png',
+  'JAMNAGAR': '/assets/images/cities/jamnagar.png',
+  'ANKLESHWAR': '/assets/images/cities/ankleshwar.png',
+  'HIMATNAGAR': '/assets/images/cities/himatnagar.png',
+  'ANAND': '/assets/images/cities/anand.png',
+  'GANDHINAGAR': '/assets/images/cities/gandhinagar.png',
+  'VADODARA': '/assets/images/cities/vadodara.png',
+  'LAXMI VILAS': '/assets/images/cities/laxmi_vilas.png',
+  'LAXMI VILAS PALACE': '/assets/images/cities/laxmi_vilas.png',
+  'NAVSARI': '/assets/images/cities/laxmi_vilas.png',
+  'AHMEDABAD': '/assets/images/cities/ahmedabad.png',
+  'STATUE OF UNITY': '/assets/images/cities/statue_of_unity.png',
+  'BHUJ': '/assets/images/cities/bhuj.png',
+  'KUTCH': '/assets/images/cities/bhuj.png',
+  'DHOLERA': '/assets/images/cities/dholera.png',
+  'DHOLERA SIR': '/assets/images/cities/dholera.png',
+  'GIFT CITY': '/assets/images/cities/gift_city.png',
+  'SURAT': '/assets/images/cities/surat.png',
+  'BHAVNAGAR': '/assets/images/cities/bhavnagar.png',
+  'BHAVNAGAR PORT': '/assets/images/cities/bhavnagar.png',
+  'KANDLA': '/assets/images/cities/kandla.png',
+  'KANDLA PORT': '/assets/images/cities/kandla.png',
+  'PORBANDAR': '/assets/images/cities/porbandar.png',
+  'PORBANDAR PORT': '/assets/images/cities/porbandar.png'
 };
 
 export const PropertySheet: React.FC = () => {
@@ -59,6 +81,8 @@ export const PropertySheet: React.FC = () => {
         }
       } else if ((e.key === 'p' || e.key === 'P') && phase === 'TILE_ACTION' && isMyTurn) {
         engine.passProperty();
+      } else if ((e.key === 'a' || e.key === 'A') && phase === 'TILE_ACTION' && isMyTurn) {
+        engine.startAuction(selectedProperty.step);
       } else if ((e.key === 'b' || e.key === 'B') && canAfford && phase === 'TILE_ACTION' && isMyTurn) {
         engine.buyProperty(selectedProperty.step);
       }
@@ -82,6 +106,12 @@ export const PropertySheet: React.FC = () => {
   const isOwnedByHero = owner?.id === heroPlayer.id;
   const isOwnedByOther = Boolean(owner && owner.id !== heroPlayer.id);
 
+  const isCornerTile =
+    tile.type === 'START' ||
+    tile.type === 'JAIL' ||
+    tile.type === 'FREE_PARKING' ||
+    tile.type === 'GO_TO_JAIL';
+
   const isSpecialTile =
     tile.type === 'TAX' ||
     tile.type === 'BANK' ||
@@ -94,11 +124,24 @@ export const PropertySheet: React.FC = () => {
         tile.type === 'TAX' ? '#e11d48' :
         tile.type === 'BANK' ? '#0284c7' :
         tile.type === 'SPECIAL' ? '#d97706' :
-        tile.type === 'CHANCE' ? '#8b5cf6' : '#3b82f6'
+        tile.type === 'CHANCE' ? '#7c3aed' :
+        tile.type === 'START' ? '#059669' :
+        tile.type === 'JAIL' ? '#475569' :
+        tile.type === 'FREE_PARKING' ? '#0284c7' :
+        tile.type === 'GO_TO_JAIL' ? '#e11d48' : '#3b82f6'
       ));
   const regionName = isPort
     ? 'Maritime Seaport'
-    : (tile.color ? COLOR_GROUP_NAMES[tile.color] || 'Gujarat Commercial' : 'Gujarat Commercial');
+    : (tile.color ? COLOR_GROUP_NAMES[tile.color] || 'Gujarat Commercial' : (
+        tile.type === 'START' ? 'Expedition Origin' :
+        tile.type === 'JAIL' ? 'State Detention & Bail' :
+        tile.type === 'FREE_PARKING' ? 'Safe Rest Oasis' :
+        tile.type === 'GO_TO_JAIL' ? 'Police Jurisdiction' :
+        tile.type === 'TAX' ? 'State Commercial Duty' :
+        tile.type === 'BANK' ? 'Central Banking Authority' :
+        tile.type === 'SPECIAL' ? 'Sovereign Bullion Reserve' :
+        tile.type === 'CHANCE' ? 'Fortune & Contingency' : 'Gujarat Landmark'
+      ));
   const tileGujarati = tile.gujaratiName || 'ગુજરાત સનદ';
 
   const propSchedule = getPropertyRentSchedule(tile.color || tileStep);
@@ -136,12 +179,16 @@ export const PropertySheet: React.FC = () => {
   // Background scenic photograph resolution
   const cityBgImage =
     tile.imageUrl ||
+    originalCityTile?.imageUrl ||
     LANDMARK_SCENIC_BY_NAME[tile.name.trim().toUpperCase()] ||
-    `/assets/images/cities/tile_${originalStep}_card.jpg` ||
-    `/assets/images/landmarks/statue_of_unity.jpg`;
+    '/assets/images/corners/corner_start.jpg';
 
   const handleBuy = () => {
     engine.buyProperty(tileStep);
+  };
+
+  const handleStartAuction = () => {
+    engine.startAuction(tileStep);
   };
 
   const handleCancel = () => {
@@ -172,108 +219,6 @@ export const PropertySheet: React.FC = () => {
     }
   };
 
-  // Determine whether turn action buttons should render in left column
-  const hasTurnActions =
-    (!owner && isPropertyTile && phase === 'TILE_ACTION' && isMyTurn) ||
-    (owner && isOwnedByHero && isPropertyTile);
-
-  const actionButtonsContent = hasTurnActions ? (
-    <div className="candy-deed-actions">
-      {!owner && isPropertyTile && phase === 'TILE_ACTION' && isMyTurn && (
-        <div className="deed-dual-actions">
-          <CandyButton
-            variant="glass"
-            size="md"
-            onClick={handleCancel}
-            style={{ flex: 1 }}
-          >
-            Pass (P)
-          </CandyButton>
-          <CandyButton
-            variant="mint"
-            size="md"
-            disabled={!canAfford}
-            onClick={handleBuy}
-            style={{ flex: 1.4 }}
-          >
-            Buy ₹{price.toLocaleString()} (B)
-          </CandyButton>
-        </div>
-      )}
-
-      {isOwnedByHero && isPropertyTile && (
-        <div className="candy-owner-actions">
-          {!isPort && currentHouses < 5 && (
-            <>
-              <CandyButton
-                fullWidth
-                variant="mint"
-                size="sm"
-                disabled={!canBuildHouse}
-                onClick={handleBuild}
-              >
-                {currentHouses === 4
-                  ? `Build Hotel (+₹${houseCost.toLocaleString()})`
-                  : `Build House (+₹${houseCost.toLocaleString()})`}
-              </CandyButton>
-              {!hasMonopoly && (
-                <div style={{ fontSize: '10.5px', color: '#64748b', textAlign: 'center', marginTop: '4px', fontWeight: 600 }}>
-                  Own all 3 {tile.color?.toUpperCase()} properties to build
-                </div>
-              )}
-            </>
-          )}
-
-          {!isPort && currentHouses > 0 && (
-            <CandyButton
-              fullWidth
-              variant="honey"
-              size="sm"
-              onClick={handleSellHouse}
-              icon={<DeleteOutlineIcon sx={{ fontSize: 14 }} />}
-            >
-              Sell Building (+₹{sellHouseValue.toLocaleString()})
-            </CandyButton>
-          )}
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {isMortgaged ? (
-              <CandyButton
-                fullWidth
-                variant="azure"
-                size="sm"
-                onClick={handleMortgage}
-                disabled={heroPlayer.balance < unmortgageCost}
-              >
-                Redeem (-₹{unmortgageCost.toLocaleString()})
-              </CandyButton>
-            ) : (
-              <CandyButton
-                fullWidth
-                variant="glass"
-                size="sm"
-                onClick={handleMortgage}
-                disabled={currentHouses > 0}
-              >
-                Mortgage (+₹{mortgageValue.toLocaleString()})
-              </CandyButton>
-            )}
-
-            {currentHouses === 0 && !isMortgaged && (
-              <CandyButton
-                fullWidth
-                variant="danger"
-                size="sm"
-                onClick={handleSellProperty}
-              >
-                Sell (+₹{sellPropertyValue.toLocaleString()})
-              </CandyButton>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  ) : null;
 
   return (
     <div
@@ -288,7 +233,13 @@ export const PropertySheet: React.FC = () => {
           <div className="candy-deed-band-left">
             <div className="candy-deed-badge-row">
               <span className="candy-deed-badge-text">
-                {isPort ? 'MARITIME HARBOR DEED' : (isPropertyTile ? 'TITLE DEED' : 'LANDMARK')}
+                {isPort
+                  ? 'MARITIME HARBOR DEED'
+                  : isPropertyTile
+                  ? 'TITLE DEED'
+                  : isCornerTile
+                  ? 'CORNER STAGE'
+                  : 'SPECIAL STAGE'}
               </span>
               <span className="candy-deed-slot-pill">SLOT #{tileStep}</span>
             </div>
@@ -307,44 +258,40 @@ export const PropertySheet: React.FC = () => {
 
         {/* ── 2. TWO-COLUMN SPLIT CONTAINER ── */}
         <div className="candy-deed-columns">
-          {/* Left Column: Seamless Scenic Photography & Turn Action Buttons */}
-          <div className={`candy-deed-left-pane ${hasTurnActions ? 'with-actions' : 'photo-only'}`}>
-            <div
-              className="candy-deed-scenic-header"
-              style={
-                isSpecialTile
-                  ? { backgroundColor: tileColor, backgroundImage: `linear-gradient(135deg, ${tileColor}, #0f172a)` }
-                  : { backgroundImage: `url("${cityBgImage}")` }
-              }
-            >
-              <div className="candy-deed-scenic-overlay" />
-
-              {isSpecialTile && tile.imageUrl && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '110px', position: 'relative', zIndex: 2 }}>
+          {/* Left Column: Dedicated Landmark Showcase Card */}
+          <div className="candy-deed-left-pane" style={{ backgroundColor: tileColor }}>
+            {cityBgImage && (
+              isSpecialTile || isCornerTile ? (
+                <div className="candy-deed-special-card">
                   <img
-                    src={tile.imageUrl}
+                    src={cityBgImage}
                     alt={tile.name}
-                    style={{ maxHeight: '80px', maxWidth: '80px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }}
+                    className="candy-deed-special-img"
                   />
                 </div>
-              )}
+              ) : (
+                <img
+                  src={cityBgImage}
+                  alt={tile.name}
+                  className="candy-deed-scenic-img"
+                  loading="eager"
+                />
+              )
+            )}
+            <div className="candy-deed-scenic-overlay" />
 
-              <div className="candy-deed-header-bottom">
-                <div className="candy-deed-title-group">
-                  <h2 className="candy-deed-title">{tile.name}</h2>
-                  <div className="candy-deed-gujarati">{tileGujarati}</div>
-                </div>
-
-                {isPropertyTile && (
-                  <div className="candy-deed-price-badge">
-                    <CurrencyCoin size={14} /> ₹{price.toLocaleString()}
-                  </div>
-                )}
+            <div className="candy-deed-header-bottom">
+              <div className="candy-deed-title-group">
+                <h2 className="candy-deed-title">{tile.name}</h2>
+                <div className="candy-deed-gujarati">{tileGujarati}</div>
               </div>
-            </div>
 
-            {/* Turn Action Buttons (Buy, Pass, Mortgage) */}
-            {actionButtonsContent}
+              {isPropertyTile && (
+                <div className="candy-deed-price-badge">
+                  <CurrencyCoin size={14} /> ₹{price.toLocaleString()}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Column: Financial Ledger & Rent Schedule */}
@@ -532,78 +479,184 @@ export const PropertySheet: React.FC = () => {
                   Tile Effect
                 </span>
                 <span style={{ fontSize: '14px', fontWeight: 800, color: tileColor }}>
-                  {tile.type === 'START' && 'Collect ₹1,000 subsidy every time you pass or land here.'}
-                  {tile.type === 'TAX' && 'Pay commercial trade duties and statutory revenue to the Gujarat State Treasury.'}
-                  {tile.type === 'CHANCE' && 'Draw an opportunistic Chance Card with real financial rewards or tariffs.'}
-                  {tile.type === 'FREE_PARKING' && 'Safe Rest Oasis: Rest peacefully without any rental charges.'}
-                  {tile.type === 'BANK' && 'Central Bank: Take liquidity loans and collect ₹250 universal interest dividends.'}
-                  {tile.type === 'JAIL' && 'State Jail / Customs Detention: Rest here or pay bail fee to exit.'}
-                  {tile.type === 'GO_TO_JAIL' && 'Sent immediately to State Detention without passing GO.'}
+                  {tile.type === 'START' && 'Expedition Starting Point: Collect ₹1,000 subsidy every time you pass or land here.'}
+                  {tile.type === 'TAX' && 'State Commercial Tax: Pay ₹500 statutory trade duties and revenue to Gujarat State Treasury.'}
+                  {tile.type === 'CHANCE' && 'Fortune Contingency: Draw an auspicious Gujarat Chance Card with real financial rewards or tariffs.'}
+                  {tile.type === 'FREE_PARKING' && 'Safe Haven: Rest peacefully without any rental charges, statutory duties, or fines.'}
+                  {tile.type === 'BANK' && 'Central Bank of Gujarat: Universal liquidity reserve paying ₹250 interest dividend to all merchants!'}
+                  {tile.type === 'JAIL' && 'Central Jail: Just Visiting with zero penalty if landing normally, or detained if sent here.'}
+                  {tile.type === 'GO_TO_JAIL' && 'Police Detainment: Sent immediately to Central Jail without passing START and without collecting ₹1,000.'}
                   {tile.type === 'SPECIAL' && 'State Gold Reserve: Collect ₹500 Sovereign Gold Bullion Dividend!'}
                 </span>
               </div>
             </div>
           )}
 
-          {/* Ownership Status Strip */}
-          {owner && (
-            <div className="candy-owner-strip" style={{ borderColor: `${owner.tokenColor}40` }}>
-              <div className="owner-left">
-                <PlayerAvatar avatar={owner.avatar} name={owner.name} color={owner.tokenColor} size={28} />
-                <div className="owner-info">
-                  <span className="owner-status-label">
-                    {isOwnedByHero ? 'Proprietor (You)' : 'Owned by Opponent'}
-                  </span>
-                  <span className="owner-name" style={{ color: owner.tokenColor }}>
-                    {owner.name}
-                  </span>
-                </div>
-              </div>
-
-              {isOwnedByOther && (
-                <div className="owner-rent-due">
-                  <span className="rent-due-label">Rent Due</span>
-                  <span className="rent-due-val">
-                    {isMortgaged ? '₹0 (MTG)' : `₹${currentRent.amount.toLocaleString()}`}
-                  </span>
-                </div>
-              )}
-
-              {isOwnedByHero && isMortgaged && (
-                <CandyPill variant="honey" size="xs">
-                  MORTGAGED
-                </CandyPill>
-              )}
-            </div>
-          )}
-
-          {/* Turn Action Buyer Bar */}
-          {!owner && phase === 'TILE_ACTION' && isMyTurn && isPropertyTile && (
-            <div className="candy-buyer-bar">
-              <div className="buyer-left">
-                <PlayerAvatar avatar={heroPlayer.avatar} name={heroPlayer.name} color={heroPlayer.tokenColor} size={28} />
-                <div className="buyer-info">
-                  <span className="buyer-name">{heroPlayer.name} (Merchant)</span>
-                  <span className="buyer-balance">Treasury: ₹{heroPlayer.balance.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {canAfford ? (
-                <CandyPill variant="mint" size="xs" icon={<CheckCircleOutlineIcon sx={{ fontSize: 13, mr: 0.2 }} />}>
-                  Can Afford
-                </CandyPill>
-              ) : (
-                <CandyPill variant="berry" size="xs" icon={<ErrorOutlineIcon sx={{ fontSize: 13, mr: 0.2 }} />}>
-                  Need ₹{(price - heroPlayer.balance).toLocaleString()}
-                </CandyPill>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
 
+    {/* ── 3. FULL-WIDTH RESPONSIVE FOOTER CONSOLE ── */}
+    {/* Case 1: Unowned property on Hero's turn -> Buyer balance + Pass / Auction / Buy */}
+    {!owner && phase === 'TILE_ACTION' && isMyTurn && isPropertyTile && (
+      <div className="candy-deed-footer-console">
+        <div className="footer-status-zone">
+          <PlayerAvatar avatar={heroPlayer.avatar} name={heroPlayer.name} color={heroPlayer.tokenColor} size={32} />
+          <div className="footer-player-info">
+            <span className="footer-player-name">{heroPlayer.name} (Merchant)</span>
+            <span className="footer-player-balance">Treasury: ₹{heroPlayer.balance.toLocaleString()}</span>
+          </div>
+          {canAfford ? (
+            <CandyPill variant="mint" size="xs" icon={<CheckCircleOutlineIcon sx={{ fontSize: 13, mr: 0.2 }} />}>
+              Can Afford
+            </CandyPill>
+          ) : (
+            <CandyPill variant="berry" size="xs" icon={<ErrorOutlineIcon sx={{ fontSize: 13, mr: 0.2 }} />}>
+              Need ₹{(price - heroPlayer.balance).toLocaleString()}
+            </CandyPill>
+          )}
+        </div>
+
+        <div className="footer-actions-zone">
+          <CandyButton
+            variant="glass"
+            size="md"
+            onClick={handleCancel}
+            className="deed-footer-btn"
+            title="Pass on buying this property"
+          >
+            Pass (P)
+          </CandyButton>
+          <CandyButton
+            variant="azure"
+            size="md"
+            onClick={handleStartAuction}
+            className="deed-footer-btn"
+            title="Send this property to public auction"
+          >
+            Auction (A)
+          </CandyButton>
+          <CandyButton
+            variant="mint"
+            size="md"
+            disabled={!canAfford}
+            onClick={handleBuy}
+            className="deed-footer-btn deed-footer-btn-primary"
+            title="Purchase directly at market price"
+          >
+            Buy ₹{price.toLocaleString()} (B)
+          </CandyButton>
+        </div>
+      </div>
+    )}
+
+    {/* Case 2: Hero-owned property -> Owner status + Build / Mortgage / Sell */}
+    {owner && isOwnedByHero && isPropertyTile && (
+      <div className="candy-deed-footer-console">
+        <div className="footer-status-zone">
+          <PlayerAvatar avatar={owner.avatar} name={owner.name} color={owner.tokenColor} size={32} />
+          <div className="footer-player-info">
+            <span className="footer-player-name">Proprietor: {owner.name} (You)</span>
+            <span className="footer-player-balance">
+              {isMortgaged ? 'Status: Mortgaged' : `Houses: ${currentHouses >= 5 ? 'Hotel' : currentHouses}`}
+            </span>
+          </div>
+          {isMortgaged && (
+            <CandyPill variant="honey" size="xs">
+              MORTGAGED
+            </CandyPill>
+          )}
+        </div>
+
+        <div className="footer-actions-zone footer-owner-zone">
+          {!isPort && currentHouses < 5 && (
+            <CandyButton
+              variant="mint"
+              size="sm"
+              disabled={!canBuildHouse}
+              onClick={handleBuild}
+              className="deed-footer-btn"
+            >
+              {currentHouses === 4
+                ? `Build Hotel (+₹${houseCost.toLocaleString()})`
+                : `Build House (+₹${houseCost.toLocaleString()})`}
+            </CandyButton>
+          )}
+
+          {!isPort && currentHouses > 0 && (
+            <CandyButton
+              variant="honey"
+              size="sm"
+              onClick={handleSellHouse}
+              icon={<DeleteOutlineIcon sx={{ fontSize: 13 }} />}
+              className="deed-footer-btn"
+            >
+              Sell (+₹{sellHouseValue.toLocaleString()})
+            </CandyButton>
+          )}
+
+          {isMortgaged ? (
+            <CandyButton
+              variant="azure"
+              size="sm"
+              onClick={handleMortgage}
+              disabled={heroPlayer.balance < unmortgageCost}
+              className="deed-footer-btn"
+            >
+              Redeem (-₹{unmortgageCost.toLocaleString()})
+            </CandyButton>
+          ) : (
+            <CandyButton
+              variant="glass"
+              size="sm"
+              onClick={handleMortgage}
+              disabled={currentHouses > 0}
+              className="deed-footer-btn"
+            >
+              Mortgage (+₹{mortgageValue.toLocaleString()})
+            </CandyButton>
+          )}
+
+          {currentHouses === 0 && !isMortgaged && (
+            <CandyButton
+              variant="danger"
+              size="sm"
+              onClick={handleSellProperty}
+              className="deed-footer-btn"
+            >
+              Sell (+₹{sellPropertyValue.toLocaleString()})
+            </CandyButton>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* Case 3: Opponent-owned property -> Opponent info + Rent Due */}
+    {owner && isOwnedByOther && (
+      <div className="candy-deed-footer-console">
+        <div className="footer-status-zone">
+          <PlayerAvatar avatar={owner.avatar} name={owner.name} color={owner.tokenColor} size={32} />
+          <div className="footer-player-info">
+            <span className="footer-player-name" style={{ color: owner.tokenColor }}>
+              {owner.name}
+            </span>
+            <span className="footer-player-balance">Proprietor (Opponent)</span>
+          </div>
+        </div>
+
+        <div className="footer-actions-zone">
+          <div className="owner-rent-due-pill">
+            <span className="rent-due-label">Rent Due:</span>
+            <span className="rent-due-val">
+              {isMortgaged ? '₹0 (Mortgaged)' : `₹${currentRent.amount.toLocaleString()}`}
+            </span>
+          </div>
+        </div>
+      </div>
+    )}
+
+    </div>
+
   </div>
-</div>
 );
 };

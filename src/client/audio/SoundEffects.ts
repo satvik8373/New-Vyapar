@@ -13,6 +13,7 @@ export class SoundEffects {
   private isPreloading: boolean = false;
   private carDriveSource: AudioBufferSourceNode | null = null;
   private carDriveGain: GainNode | null = null;
+  private lastMoneyChimeTimestamp = 0;
 
   private constructor() {
     // AudioContext will be lazily initialized on first user interaction
@@ -325,6 +326,10 @@ export class SoundEffects {
    */
   public playMoneyChime(): void {
     if (this.isMuted) return;
+    const nowMs = Date.now();
+    if (nowMs - this.lastMoneyChimeTimestamp < 350) return;
+    this.lastMoneyChimeTimestamp = nowMs;
+
     const ctx = this.getContext();
     if (!ctx) return;
 

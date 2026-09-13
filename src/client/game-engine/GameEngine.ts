@@ -156,11 +156,53 @@ const BOARD_SIZE        = 32;
 export interface AuctionState {
   tileStep: number;
   tileName: string;
+  tileGujarati?: string;
+  tileColor?: string;
   tilePrice: number;
   currentBid: number;
+  minIncrement: number;
   highestBidderId: string | null;
   biddingOrder: string[];   // player ids in order, excluding bankrupt
+  activeBidderIds: string[]; // players still in the auction
+  passedPlayerIds: string[]; // players who folded/passed
   currentBidderIndex: number;
+  currentBidderId: string;
+  round: number;
+  isCompleted?: boolean;
+  winnerId?: string | null;
+}
+
+export interface RentTransaction {
+  id: string;
+  payerId: string;
+  payerName: string;
+  payerColor: string;
+  payerAvatar?: string;
+  ownerId: string;
+  ownerName: string;
+  ownerColor: string;
+  ownerAvatar?: string;
+  tileStep: number;
+  tileName: string;
+  tileGujarati?: string;
+  tileColor?: string;
+  amount: number;
+  tier: string;
+  isDoubled: boolean;
+  timestamp: number;
+}
+
+export interface CoinTransferEvent {
+  id: string;
+  fromPlayerId: string;
+  toPlayerId: string;
+  fromPlayerName?: string;
+  fromPlayerColor?: string;
+  toPlayerName?: string;
+  toPlayerColor?: string;
+  amount: number;
+  reason: 'rent' | 'salary' | 'tax' | 'auction' | 'bonus';
+  timestamp: number;
 }
 
 export interface TradeProposal {
@@ -209,6 +251,8 @@ export interface GameEngineState {
   bankLoanBalance: Record<string, number>;
   hoveredOwnerId: string | null;
   activeAnnouncement: GameAnnouncement | null;
+  activeRentTransaction: RentTransaction | null;
+  activeCoinTransfer: CoinTransferEvent | null;
   isPaused?: boolean;
 }
 
@@ -511,6 +555,8 @@ export class GameEngine {
       bankLoanBalance: {},
       hoveredOwnerId: null,
       activeAnnouncement: null,
+      activeRentTransaction: null,
+      activeCoinTransfer: null,
       isPaused: false,
     };
     this.emit();
@@ -573,6 +619,8 @@ export class GameEngine {
       bankLoanBalance: {},
       hoveredOwnerId: null,
       activeAnnouncement: null,
+      activeRentTransaction: null,
+      activeCoinTransfer: null,
       isPaused: false,
     };
   }
@@ -615,6 +663,20 @@ export class GameEngine {
     }
     if (this.state.activeAnnouncement) {
       this.state.activeAnnouncement = null;
+      this.emit();
+    }
+  }
+
+  public dismissRentGraphic(): void {
+    if (this.state.activeRentTransaction) {
+      this.state.activeRentTransaction = null;
+      this.emit();
+    }
+  }
+
+  public clearCoinTransfer(): void {
+    if (this.state.activeCoinTransfer) {
+      this.state.activeCoinTransfer = null;
       this.emit();
     }
   }
@@ -1122,10 +1184,33 @@ export class GameEngine {
           const isOwnerHuman = owner.isHuman;
           const isPlayerHuman = player.isHuman;
 
-          // Sound effect: Positive money chime if human owner receives profit!
-          if (isOwnerHuman) {
-            SoundEffects.getInstance().playMoneyChime();
-          } else if (isPlayerHuman) {
+          // Dedicated user-to-user rent transaction with graphics & flying coin transfer
+          const rentTx: RentTransaction = {
+            id: `rent_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            payerId: player.id,
+            payerName: player.name,
+            payerColor: player.tokenColor,
+            payerAvatar: player.avatar,
+            ownerId: owner.id,
+            ownerName: owner.name,
+            ownerColor: owner.tokenColor,
+            ownerAvatar: owner.avatar,
+            tileStep: tile.step,
+            tileName: tile.name,
+            tileGujarati: tile.gujaratiName,
+            tileColor: tile.color || undefined,
+            amount: rentOwed,
+            tier: rentDetails.tier,
+            isDoubled: Boolean(rentDetails.isDoubled),
+            timestamp: Date.now()
+          };
+          this.state.activeRentTransaction = rentTx;
+
+          // Dedicated rent transaction card in center board handles visual settlement
+          // (No conflicting full-screen coin animations or double chime sounds)
+
+          // Sound effect: Tax/deduct sound if human player is paying rent
+          if (isPlayerHuman) {
             SoundEffects.getInstance().playTaxDeduct();
           }
 
@@ -1138,54 +1223,13 @@ export class GameEngine {
             'rent'
           );
 
-          if (isOwnerHuman) {
-            // High-visibility celebratory positive announcement when someone lands on your property!
-            this.triggerAnnouncement({
-              type: 'rent',
-              title: '🎉 RENT COLLECTED!',
-              message: `${player.name} entered your property (${tile.name}) and paid you rent!`,
-              amount: rentOwed,
-              amountType: 'plus',
-              playerName: player.name,
-              playerColor: player.tokenColor,
-              targetPlayerName: owner.name,
-              targetPlayerColor: owner.tokenColor,
-              tileStep: tile.step,
-              tileName: tile.name,
-              tileColor: tile.color || undefined
-            }, 2500);
-          } else if (isPlayerHuman) {
-            this.triggerAnnouncement({
-              type: 'rent',
-              title: 'RENT PAID',
-              message: `You entered ${owner.name}'s property (${tile.name}) and paid ₹${rentOwed.toLocaleString()} rent.`,
-              amount: rentOwed,
-              amountType: 'minus',
-              playerName: player.name,
-              playerColor: player.tokenColor,
-              targetPlayerName: owner.name,
-              targetPlayerColor: owner.tokenColor,
-              tileStep: tile.step,
-              tileName: tile.name,
-              tileColor: tile.color || undefined
-            }, 2500);
-          } else {
-            // Bot pays Bot: clear announcement so human player understands why balances changed!
-            this.triggerAnnouncement({
-              type: 'rent',
-              title: 'RENT TRANSACTION',
-              message: `${player.name} paid ₹${rentOwed.toLocaleString()} rent to ${owner.name} for ${tile.name}.`,
-              amount: rentOwed,
-              amountType: 'minus',
-              playerName: player.name,
-              playerColor: player.tokenColor,
-              targetPlayerName: owner.name,
-              targetPlayerColor: owner.tokenColor,
-              tileStep: tile.step,
-              tileName: tile.name,
-              tileColor: tile.color || undefined
-            }, 2000);
-          }
+          // Dedicated auto-clearing for rent transaction
+          setTimeout(() => {
+            if (this.state.activeRentTransaction?.id === rentTx.id) {
+              this.state.activeRentTransaction = null;
+              this.emit();
+            }
+          }, 2400);
 
           const updatedDebtor = this.state.players.find((p) => p.id === player.id);
           if (updatedDebtor && updatedDebtor.balance < 0) {
@@ -1425,56 +1469,96 @@ export class GameEngine {
     this.checkBotEndTurn(player);
   }
 
-  // ── AUCTION ──────────────────────────────────────────────────────────────────
+  // ── AUCTION SYSTEM ───────────────────────────────────────────────────────────
 
-  private startAuction(tileStep: number): void {
+  public startAuction(tileStep: number): void {
     const tile = BOARD_TILES.find((t) => t.step === tileStep);
     if (!tile || !tile.price) return;
 
-    const biddingOrder = this.state.players
-      .filter((p) => !p.isBankrupt)
-      .map((p) => p.id);
+    // Filter players who can participate: non-bankrupt players
+    const solventPlayers = this.state.players.filter((p) => !p.isBankrupt && p.balance > 0);
+    if (solventPlayers.length === 0) return;
+
+    const biddingOrder = solventPlayers.map((p) => p.id);
 
     this.state.auctionState = {
       tileStep,
       tileName: tile.name,
+      tileGujarati: tile.gujaratiName || undefined,
+      tileColor: tile.color || undefined,
       tilePrice: tile.price,
-      currentBid: 0,
+      currentBid: tile.price, // Auction starts from current valuation
+      minIncrement: 50,
       highestBidderId: null,
       biddingOrder,
+      activeBidderIds: [...biddingOrder],
+      passedPlayerIds: [],
       currentBidderIndex: 0,
+      currentBidderId: biddingOrder[0],
+      round: 1,
+      isCompleted: false,
+      winnerId: null,
     };
+    this.state.selectedProperty = null;
     this.state.phase = 'TILE_ACTION';
-    this.addLog(`Auction started for ${tile.name} (min. ₹1). Bidding begins!`, 'auction');
+    this.addLog(`Public Auction started for ${tile.name} starting from valuation ₹${tile.price.toLocaleString()}. Bidding begins!`, 'auction');
     this.emit();
 
-    // Bot players bid automatically
+    // If first bidder is a bot, trigger automated bid thinking
     this.processBotBids();
+  }
+
+  public startAuctionForProperty(tileStep?: number): void {
+    const active = this.getActivePlayer();
+    const step = tileStep !== undefined
+      ? tileStep
+      : (this.state.selectedProperty?.step ?? active?.currentTileIndex);
+    if (step !== undefined) {
+      this.startAuction(step);
+    }
   }
 
   private processBotBids(): void {
     if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) return;
     const auction = this.state.auctionState;
-    if (!auction) return;
+    if (!auction || auction.isCompleted) return;
 
-    const currentBidderId = auction.biddingOrder[auction.currentBidderIndex];
+    const currentBidderId = auction.currentBidderId;
     const currentBidder = this.state.players.find((p) => p.id === currentBidderId);
     if (!currentBidder) { this.nextAuctionBidder(); return; }
 
     if (currentBidder.isHuman) return; // Wait for human input
 
-    const delay = this.aiDifficulty === 'HARD' ? 700 : this.aiDifficulty === 'MEDIUM' ? 1200 : 1600;
+    const delay = this.aiDifficulty === 'HARD' ? 800 : this.aiDifficulty === 'MEDIUM' ? 1200 : 1600;
 
     setTimeout(() => {
       if (this.state.isPaused) return;
-      if (!this.state.auctionState) return;
-      let multiplier = 0.8;
-      if (this.aiDifficulty === 'EASY') multiplier = 0.5;
-      else if (this.aiDifficulty === 'HARD') multiplier = 1.3;
+      const currentAuction = this.state.auctionState;
+      if (!currentAuction || currentAuction.isCompleted || currentAuction.currentBidderId !== currentBidderId) return;
 
-      const maxWilling = Math.round(auction.tilePrice * multiplier);
-      const minBid = auction.currentBid + 100;
+      let multiplier = 1.0;
+      if (this.aiDifficulty === 'EASY') multiplier = 1.0;
+      else if (this.aiDifficulty === 'MEDIUM') multiplier = 1.2;
+      else if (this.aiDifficulty === 'HARD') multiplier = 1.4;
+
+      const tile = BOARD_TILES.find((t) => t.step === currentAuction.tileStep);
+      if (tile?.color) {
+        const colorGroup = BOARD_TILES.filter((t) => t.color === tile.color);
+        const botOwns = colorGroup.filter((t) => currentBidder.ownedPropertyIds?.includes(t.step)).length;
+        const humanPlayer = this.state.players.find((p) => p.isHuman);
+        const humanOwns = colorGroup.filter((t) => humanPlayer?.ownedPropertyIds?.includes(t.step)).length;
+
+        // Boost interest if completes own monopoly or blocks opponent
+        if (botOwns === colorGroup.length - 1) multiplier += 0.35;
+        else if (humanOwns === colorGroup.length - 1) multiplier += 0.25;
+      }
+
+      const maxWilling = Math.round(currentAuction.tilePrice * multiplier);
+      const minBid = currentAuction.highestBidderId === null
+        ? currentAuction.tilePrice
+        : currentAuction.currentBid + currentAuction.minIncrement;
+
       if (minBid <= maxWilling && minBid <= currentBidder.balance) {
         this.placeBid(currentBidderId, minBid);
       } else {
@@ -1483,47 +1567,125 @@ export class GameEngine {
     }, delay);
   }
 
-  public placeBid(bidderId: string, amount: number): void {
+  public placeBid(bidderId: string, amount: number): boolean {
     const auction = this.state.auctionState;
-    if (!auction) return;
+    if (!auction || auction.isCompleted) return false;
     const bidder = this.state.players.find((p) => p.id === bidderId);
-    if (!bidder) return;
-    if (amount <= auction.currentBid) {
-      this.addLog(`Bid of ₹${amount.toLocaleString()} by ${bidder.name} is too low (current: ₹${auction.currentBid.toLocaleString()}).`, 'auction');
-      return;
+    if (!bidder) return false;
+
+    // For opening bid when no highest bidder exists yet, the bid must be at least the valuation.
+    // For subsequent bids, the bid must strictly exceed currentBid.
+    if (auction.highestBidderId === null) {
+      if (amount < auction.currentBid) {
+        this.addLog(`Opening bid must be at least the valuation of ₹${auction.currentBid.toLocaleString()}.`, 'auction');
+        return false;
+      }
+    } else {
+      if (amount <= auction.currentBid) {
+        this.addLog(`Bid of ₹${amount.toLocaleString()} by ${bidder.name} is too low (current bid: ₹${auction.currentBid.toLocaleString()}).`, 'auction');
+        return false;
+      }
     }
     if (amount > bidder.balance) {
-      this.addLog(`${bidder.name} cannot afford ₹${amount.toLocaleString()}.`, 'auction');
-      return;
+      this.addLog(`${bidder.name} cannot afford ₹${amount.toLocaleString()} (balance: ₹${bidder.balance.toLocaleString()}).`, 'auction');
+      return false;
     }
-    this.state.auctionState = { ...auction, currentBid: amount, highestBidderId: bidderId };
+
+    SoundEffects.getInstance().playMoneyChime();
     this.addLog(`${bidder.name} bids ₹${amount.toLocaleString()} for ${auction.tileName}.`, 'auction');
+
+    this.state.auctionState = {
+      ...auction,
+      currentBid: amount,
+      highestBidderId: bidderId
+    };
     this.emit();
+
+    // After placing bid, check if all other active bidders have already folded
+    const remainingOthers = auction.activeBidderIds.filter((id) => id !== bidderId);
+    if (remainingOthers.length === 0) {
+      this.finalizeAuction();
+      return true;
+    }
+
     this.nextAuctionBidder();
+    return true;
   }
 
   public skipAuctionBid(bidderId: string): void {
     const auction = this.state.auctionState;
-    if (!auction) return;
+    if (!auction || auction.isCompleted) return;
     const bidder = this.state.players.find((p) => p.id === bidderId);
-    this.addLog(`${bidder?.name} passes on ${auction.tileName}.`, 'auction');
+    this.addLog(`${bidder?.name || 'Player'} passes on ${auction.tileName}.`, 'auction');
+
+    const updatedActiveBidders = auction.activeBidderIds.filter((id) => id !== bidderId);
+    const updatedPassed = [...auction.passedPlayerIds, bidderId];
+
+    this.state.auctionState = {
+      ...auction,
+      activeBidderIds: updatedActiveBidders,
+      passedPlayerIds: updatedPassed
+    };
+    this.emit();
+
+    // End conditions:
+    // 1. If no active bidders left:
+    if (updatedActiveBidders.length === 0) {
+      this.finalizeAuction();
+      return;
+    }
+
+    // 2. If only 1 active bidder left and they hold the highest bid:
+    if (updatedActiveBidders.length === 1 && this.state.auctionState.highestBidderId === updatedActiveBidders[0]) {
+      this.finalizeAuction();
+      return;
+    }
+
     this.nextAuctionBidder();
   }
 
   private nextAuctionBidder(): void {
     const auction = this.state.auctionState;
-    if (!auction) return;
+    if (!auction || auction.isCompleted) return;
 
-    const nextIdx = auction.currentBidderIndex + 1;
-
-    if (nextIdx >= auction.biddingOrder.length) {
-      // All players have had a chance — finalize
+    const { activeBidderIds, highestBidderId } = auction;
+    if (activeBidderIds.length === 0) {
       this.finalizeAuction();
-    } else {
-      this.state.auctionState = { ...auction, currentBidderIndex: nextIdx };
-      this.emit();
-      this.processBotBids();
+      return;
     }
+
+    // If only one bidder remains and they have made a bid, they win!
+    if (activeBidderIds.length === 1 && highestBidderId === activeBidderIds[0]) {
+      this.finalizeAuction();
+      return;
+    }
+
+    // Find next bidder among active bidders
+    const currentActiveIdx = activeBidderIds.indexOf(auction.currentBidderId);
+    let nextActiveIdx = currentActiveIdx + 1;
+    let nextRound = auction.round;
+
+    if (nextActiveIdx >= activeBidderIds.length) {
+      nextActiveIdx = 0;
+      nextRound += 1;
+    }
+
+    const nextBidderId = activeBidderIds[nextActiveIdx];
+
+    // If next bidder is already the highest bidder (meaning all other active bidders cycled or passed):
+    if (nextBidderId === highestBidderId && activeBidderIds.length <= 1) {
+      this.finalizeAuction();
+      return;
+    }
+
+    this.state.auctionState = {
+      ...auction,
+      currentBidderId: nextBidderId,
+      currentBidderIndex: auction.biddingOrder.indexOf(nextBidderId),
+      round: nextRound
+    };
+    this.emit();
+    this.processBotBids();
   }
 
   private finalizeAuction(): void {
@@ -1550,18 +1712,35 @@ export class GameEngine {
         ? { ...p, ownedPropertyIds: updatedWinnerProps }
         : p
     );
+
+    // Coin transfer animation from winner to Bank
+    this.state.activeCoinTransfer = {
+      id: `coin_auction_${Date.now()}`,
+      fromPlayerId: winner.id,
+      toPlayerId: 'BANK',
+      fromPlayerName: winner.name,
+      fromPlayerColor: winner.tokenColor,
+      toPlayerName: 'Navo Bank',
+      toPlayerColor: '#ca8a04',
+      amount: auction.currentBid,
+      reason: 'auction',
+      timestamp: Date.now()
+    };
+
     SoundEffects.getInstance().playPurchaseJingle();
     this.triggerAnnouncement({
       type: 'buy',
       title: 'AUCTION WON',
-      message: winner.isHuman ? `You won auction for ${auction.tileName}!` : `${winner.name} won auction for ${auction.tileName}!`,
+      message: winner.isHuman
+        ? `You won the auction for ${auction.tileName} at ₹${auction.currentBid.toLocaleString()}!`
+        : `${winner.name} won the auction for ${auction.tileName} at ₹${auction.currentBid.toLocaleString()}!`,
       amount: auction.currentBid,
       amountType: 'minus',
       playerName: winner.name,
       playerColor: winner.tokenColor,
       tileStep: auction.tileStep,
       tileName: auction.tileName
-    }, 2400);
+    }, 2800);
 
     const wonTile = BOARD_TILES.find((t) => t.step === auction.tileStep);
     if (wonTile?.color) {
@@ -1575,22 +1754,32 @@ export class GameEngine {
           tiles: groupTiles.map((t) => t.step),
           playerId: winner.id
         };
-        this.addLog(`MONOPOLY UNLOCKED! ${winner.name} now owns all ${wonTile.color.toUpperCase()} properties. Upgrades unlocked!`, 'info');
+        this.addLog(`MONOPOLY UNLOCKED! ${winner.name} now controls all ${wonTile.color.toUpperCase()} properties. Upgrades unlocked!`, 'info');
         this.triggerAnnouncement({
           type: 'info',
           title: '👑 MONOPOLY UNLOCKED!',
           message: `${winner.name} now controls all ${wonTile.color.toUpperCase()} properties!`,
           playerName: winner.name,
           playerColor: winner.tokenColor
-        }, 3000);
+        }, 3200);
       }
     }
 
-    this.state.auctionState = null;
-    this.state.phase = 'RESOLVING';
+    // Set isCompleted flag so UI can celebrate the winning moment
+    this.state.auctionState = {
+      ...auction,
+      isCompleted: true,
+      winnerId: winner.id
+    };
     this.emit();
-    const active = this.getActivePlayer();
-    this.checkBotEndTurn(active);
+
+    setTimeout(() => {
+      this.state.auctionState = null;
+      this.state.phase = 'RESOLVING';
+      this.emit();
+      const active = this.getActivePlayer();
+      this.checkBotEndTurn(active);
+    }, 2400);
   }
 
   // ── BUY & PASS ──────────────────────────────────────────────────────────────
@@ -1732,8 +1921,8 @@ export class GameEngine {
     return true;
   }
 
-  /** Player declines → property remains with bank */
-  public passProperty(isBot = false): void {
+  /** Player declines → property offered to public auction per Vyapar / Monopoly rules! */
+  public passProperty(isBot = false, sendToAuction = true): void {
     if (this.state.isPaused) return;
     if (this.mpAdapter?.isMultiplayerActive()) {
       this.mpAdapter.passProperty();
@@ -1746,6 +1935,20 @@ export class GameEngine {
 
     const tile = this.state.selectedProperty || BOARD_TILES.find((t) => t.step === active.currentTileIndex);
     this.addLog(`${active.name} passed on ${tile?.name || 'property'}.`, 'pass');
+    this.state.selectedProperty = null;
+
+    if (sendToAuction && tile && tile.price && (tile.type === 'PROPERTY' || tile.type === 'PORT')) {
+      this.triggerAnnouncement({
+        type: 'info',
+        title: 'AUCTION TRIGGERED',
+        message: `${active.name} passed on ${tile.name}. Starting Public Auction!`,
+        playerName: active.name,
+        playerColor: active.tokenColor
+      }, 1600);
+      this.startAuction(tile.step);
+      return;
+    }
+
     this.triggerAnnouncement({
       type: 'info',
       title: 'PROPERTY PASSED',
@@ -1753,7 +1956,6 @@ export class GameEngine {
       playerName: active.name,
       playerColor: active.tokenColor
     }, 1800);
-    this.state.selectedProperty = null;
     this.state.phase = 'RESOLVING';
     this.emit();
     this.checkBotEndTurn(active);
@@ -2457,7 +2659,9 @@ export class GameEngine {
           message: 'Saved game loaded successfully! Resuming match.',
           timestamp: Date.now(),
           durationMs: 2200
-        }
+        },
+        activeRentTransaction: null,
+        activeCoinTransfer: null
       };
       this.emit();
       this.addLog('Saved game loaded successfully.', 'info');

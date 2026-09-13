@@ -195,6 +195,8 @@ export const CandyButton: React.FC<CandyButtonProps> = ({
         width: fullWidth ? '100%' : 'auto',
         alignItems: 'center',
         justifyContent: 'center',
+        whiteSpace: 'nowrap',
+        minWidth: 0,
         gap: s.gap,
         padding: s.padding,
         fontSize: s.fontSize,

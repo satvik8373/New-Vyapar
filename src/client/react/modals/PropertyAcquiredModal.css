@@ -18,17 +18,17 @@
 .acquired-modal-dialog {
   position: relative;
   width: 100%;
-  max-width: 360px;
+  max-width: min(420px, calc(100vw - 32px));
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 24px;
+  border-radius: 20px;
   box-shadow:
     0 32px 80px -16px rgba(15, 23, 42, 0.45),
     0 12px 30px rgba(15, 23, 42, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 18px 18px 16px 18px;
+  padding: 22px 20px 18px 20px;
   box-sizing: border-box;
   animation: popInModal 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -50,8 +50,8 @@
   position: absolute;
   top: 14px;
   right: 14px;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
@@ -80,10 +80,10 @@
   display: inline-block;
   background: #059669;
   color: #ffffff;
-  font-size: 8.5px;
+  font-size: 9.5px;
   font-weight: 900;
   letter-spacing: 0.8px;
-  padding: 2px 8px;
+  padding: 2.5px 9px;
   border-radius: 9999px;
   margin-bottom: 5px;
 }
@@ -94,7 +94,7 @@
 
 .acquired-title {
   margin: 0;
-  font-size: 17px;
+  font-size: clamp(18px, 2vw, 21px);
   font-weight: 950;
   color: #0f172a;
   line-height: 1.2;
@@ -102,7 +102,7 @@
 
 .acquired-subtitle {
   margin: 4px 0 0 0;
-  font-size: 11px;
+  font-size: clamp(12px, 1.2vw, 13.5px);
   color: #64748b;
   line-height: 1.35;
 }

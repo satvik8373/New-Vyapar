@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { BoardTileStep, COLOR_HEX_MAP, DEFAULT_BOARD_TILES } from '@shared/game-data/boardData';
+import {
+  BoardTileStep,
+  COLOR_HEX_MAP,
+  DEFAULT_BOARD_TILES,
+  getPropertyRentSchedule,
+  PORT_RENT_SCHEDULE
+} from '@shared/game-data/boardData';
 import { CurrencyCoin } from '../common/CurrencyCoin';
 import './CityDeedStack.css';
 
@@ -240,18 +246,27 @@ export const CityDeedStack: React.FC<CityDeedStackProps> = ({
     >
       {stack.map((card, index) => {
         const tile = card.tile;
-        const colorHex = tile.color ? COLOR_HEX_MAP[tile.color] || '#334155' : '#475569';
+        const isPort = tile.type === 'PORT';
+        const colorHex = isPort
+          ? '#0284c7'
+          : (tile.color ? COLOR_HEX_MAP[tile.color] || '#334155' : '#475569');
         const isTopCard = index === stack.length - 1;
         const isJustAcquired = highlightStep !== undefined && tile.step === highlightStep;
         const randomRotate = randomRotation ? ((index * 9) % 10) - 5 : 0;
+
+        const propSchedule = getPropertyRentSchedule(tile.color || tile.step);
+        const portSchedule = PORT_RENT_SCHEDULE;
+
+        const baseRent = isPort ? portSchedule.rent1Port : propSchedule.siteRent;
+        const mortgageValue = isPort ? portSchedule.mortgageValue : propSchedule.mortgageValue;
+        const purchasePrice = tile.price || (isPort ? portSchedule.price : 1000);
 
         // Resolve high-resolution city figurine/landmark sprite safely
         const defaultMatch = DEFAULT_BOARD_TILES.find(
           (t) => t.name.trim().toUpperCase() === tile.name.trim().toUpperCase()
         );
-        const originalStep = defaultMatch ? defaultMatch.step : tile.step;
         const spriteSrc =
-          tile.imageUrl || `/assets/images/cities/tile_${originalStep}.png`;
+          tile.imageUrl || defaultMatch?.imageUrl || '/assets/images/corners/corner_start.jpg';
 
         return (
           <CardRotate
@@ -281,12 +296,14 @@ export const CityDeedStack: React.FC<CityDeedStackProps> = ({
               {/* Header Ribbon with authentic Gujarat styling */}
               <div className="deed-card-header-band" style={{ backgroundColor: colorHex }}>
                 <div className="deed-header-top-row">
-                  <span className="deed-header-sub">TITLE DEED OF GUJARAT</span>
+                  <span className="deed-header-sub">
+                    {isPort ? 'MARITIME HARBOR DEED' : 'TITLE DEED OF GUJARAT'}
+                  </span>
                   {isJustAcquired && (
                     <span className="deed-just-acquired-pill">NEW</span>
                   )}
                 </div>
-                <h3 className="deed-city-name">{tile.name}</h3>
+                <h3 className="deed-city-name" title={tile.name}>{tile.name}</h3>
                 {tile.gujaratiName && (
                   <span className="deed-city-gujarati">{tile.gujaratiName}</span>
                 )}
@@ -301,10 +318,8 @@ export const CityDeedStack: React.FC<CityDeedStackProps> = ({
                   loading="eager"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
-                    if (!img.src.includes(`tile_${originalStep}_card.jpg`)) {
-                      img.src = `/assets/images/cities/tile_${originalStep}_card.jpg`;
-                    } else {
-                      img.src = `/assets/images/cities/tile_${originalStep}_full.png`;
+                    if (tile.imageUrl && img.src !== tile.imageUrl) {
+                      img.src = tile.imageUrl;
                     }
                   }}
                 />
@@ -312,49 +327,81 @@ export const CityDeedStack: React.FC<CityDeedStackProps> = ({
 
               {/* Rent Schedule Table */}
               <div className="deed-card-body">
-                <div className="deed-stat-row main-rent">
-                  <span className="deed-label">Base Commercial Rent</span>
-                  <span className="deed-value font-emerald">
-                    <CurrencyCoin size={13} />
-                    {(tile.price ? Math.round(tile.price * 0.1) : 100).toLocaleString()}
-                  </span>
-                </div>
+                {isPort ? (
+                  <>
+                    <div className="deed-stat-row main-rent">
+                      <span className="deed-label">Single Berth Tariff</span>
+                      <span className="deed-value font-emerald">
+                        <CurrencyCoin size={13} />
+                        {portSchedule.rent1Port.toLocaleString()}
+                      </span>
+                    </div>
 
-                <div className="deed-schedule-mini">
-                  <div className="schedule-row">
-                    <span>With 1 Commercial House</span>
-                    <span>₹{((tile.price ? Math.round(tile.price * 0.1) : 100) * 3).toLocaleString()}</span>
-                  </div>
-                  <div className="schedule-row">
-                    <span>With 2 Commercial Houses</span>
-                    <span>₹{((tile.price ? Math.round(tile.price * 0.1) : 100) * 8).toLocaleString()}</span>
-                  </div>
-                  <div className="schedule-row">
-                    <span>With 3 Commercial Houses</span>
-                    <span>₹{((tile.price ? Math.round(tile.price * 0.1) : 100) * 18).toLocaleString()}</span>
-                  </div>
-                  <div className="schedule-row">
-                    <span>With 4 Commercial Houses</span>
-                    <span>₹{((tile.price ? Math.round(tile.price * 0.1) : 100) * 28).toLocaleString()}</span>
-                  </div>
-                  <div className="schedule-row hotel-row">
-                    <span>With Luxury Hotel Complex</span>
-                    <span className="font-emerald">₹{((tile.price ? Math.round(tile.price * 0.1) : 100) * 40).toLocaleString()}</span>
-                  </div>
-                </div>
+                    <div className="deed-schedule-mini">
+                      <div className="schedule-row">
+                        <span>With 1 Seaport owned</span>
+                        <span>₹{portSchedule.rent1Port.toLocaleString()}</span>
+                      </div>
+                      <div className="schedule-row">
+                        <span>With 2 Seaports owned</span>
+                        <span>₹{portSchedule.rent2Ports.toLocaleString()}</span>
+                      </div>
+                      <div className="schedule-row hotel-row">
+                        <span style={{ fontWeight: 800 }}>With all 3 Seaports</span>
+                        <span className="font-emerald">₹{portSchedule.rent3Ports.toLocaleString()}</span>
+                      </div>
+                      <div className="schedule-row" style={{ color: '#64748b', fontSize: '9px', fontStyle: 'italic', paddingTop: '3px' }}>
+                        <span>Tariff scales 2× &amp; 4× across ports</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="deed-stat-row main-rent">
+                      <span className="deed-label">Base Commercial Rent</span>
+                      <span className="deed-value font-emerald">
+                        <CurrencyCoin size={13} />
+                        {propSchedule.siteRent.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="deed-schedule-mini">
+                      <div className="schedule-row">
+                        <span>With 1 Commercial House</span>
+                        <span>₹{propSchedule.rent1House.toLocaleString()}</span>
+                      </div>
+                      <div className="schedule-row">
+                        <span>With 2 Commercial Houses</span>
+                        <span>₹{propSchedule.rent2Houses.toLocaleString()}</span>
+                      </div>
+                      <div className="schedule-row">
+                        <span>With 3 Commercial Houses</span>
+                        <span>₹{propSchedule.rent3Houses.toLocaleString()}</span>
+                      </div>
+                      <div className="schedule-row">
+                        <span>With 4 Commercial Houses</span>
+                        <span>₹{propSchedule.rent4Houses.toLocaleString()}</span>
+                      </div>
+                      <div className="schedule-row hotel-row">
+                        <span>With Luxury Hotel Complex</span>
+                        <span className="font-emerald">₹{propSchedule.rentHotel.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Footer Price & Mortgage */}
                 <div className="deed-card-footer">
                   <div className="deed-footer-col">
                     <span className="deed-footer-label">MORTGAGE VALUE</span>
                     <span className="deed-footer-val">
-                      ₹{Math.round((tile.price || 1000) * 0.5).toLocaleString()}
+                      ₹{mortgageValue.toLocaleString()}
                     </span>
                   </div>
                   <div className="deed-footer-col text-right">
                     <span className="deed-footer-label">PURCHASE VALUE</span>
                     <span className="deed-footer-val font-bold">
-                      ₹{(tile.price || 0).toLocaleString()}
+                      ₹{purchasePrice.toLocaleString()}
                     </span>
                   </div>
                 </div>

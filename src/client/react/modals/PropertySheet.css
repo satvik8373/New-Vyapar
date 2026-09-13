@@ -24,15 +24,15 @@
 /* ══ MAIN CARD CONTAINER ══ */
 .candy-deed-modal {
   position: relative;
-  width: min(690px, calc(100vw - 28px));
-  max-height: min(92dvh, 560px);
+  width: min(780px, calc(100vw - 24px));
+  max-height: min(92dvh, 600px);
   height: auto;
   background: #ffffff;
   border-radius: 14px;
   border: 1px solid rgba(226, 232, 240, 0.95);
   box-shadow:
-    0 24px 50px -12px rgba(15, 23, 42, 0.3),
-    0 8px 18px -6px rgba(15, 23, 42, 0.12);
+    0 24px 50px -12px rgba(15, 23, 42, 0.28),
+    0 8px 18px -6px rgba(15, 23, 42, 0.1);
   overflow: hidden;
   animation: deedPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
@@ -61,13 +61,7 @@
   flex-shrink: 0;
 }
 
-.candy-deed-top-band::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.12) 100%);
-  pointer-events: none;
-}
+
 
 .candy-deed-band-left {
   display: flex;
@@ -85,7 +79,7 @@
 }
 
 .candy-deed-badge-text {
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 850;
   letter-spacing: 1.2px;
   text-transform: uppercase;
@@ -93,9 +87,9 @@
 }
 
 .candy-deed-slot-pill {
-  font-size: 8px;
+  font-size: 9.5px;
   font-weight: 850;
-  padding: 1.5px 7px;
+  padding: 2px 8px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.22);
   color: #ffffff;
@@ -142,65 +136,97 @@
   display: flex;
   flex-direction: row;
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 380px;
   overflow: hidden;
-  background: #ffffff;
+  background: #0f172a;
   align-items: stretch;
 }
 
-/* Left Column: Seamless Scenic Photography & Turn Actions */
+/* Left Column: Dedicated Landmark Showcase Card */
 .candy-deed-left-pane {
-  width: 295px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border-right: 1px solid rgba(226, 232, 240, 0.9);
-  background: #0f172a;
-  box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
-}
-
-.candy-deed-left-pane.photo-only {
-  justify-content: flex-start;
-}
-
-.candy-deed-scenic-header {
-  position: relative;
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: 200px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  width: clamp(260px, 38%, 320px);
+  flex: 0 0 clamp(260px, 38%, 320px);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  align-self: stretch;
+  border-right: 1px solid rgba(226, 232, 240, 0.9);
+  background-color: #0f172a;
   box-sizing: border-box;
   overflow: hidden;
+  position: relative;
+}
+
+.candy-deed-scenic-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  z-index: 1;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.candy-deed-left-pane:hover .candy-deed-scenic-img {
+  transform: scale(1.03);
 }
 
 .candy-deed-scenic-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: linear-gradient(180deg,
-    rgba(15, 23, 42, 0.08) 0%,
-    rgba(15, 23, 42, 0.15) 35%,
-    rgba(15, 23, 42, 0.68) 72%,
-    rgba(15, 23, 42, 0.94) 100%
+    rgba(0, 0, 0, 0.08) 0%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.5) 65%,
+    rgba(0, 0, 0, 0.92) 100%
   );
-  z-index: 1;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.candy-deed-special-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 50px;
+  z-index: 2;
+}
+
+.candy-deed-special-img {
+  max-height: 150px;
+  max-width: 150px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
 }
 
 .candy-deed-header-bottom {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 14px 16px 14px;
+  padding: 16px 18px;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: auto;
 }
 
 .candy-deed-title-group {
@@ -219,7 +245,10 @@
   color: #ffffff;
   line-height: 1.15;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+  hyphens: none;
 }
 
 .candy-deed-gujarati {
@@ -227,6 +256,10 @@
   color: rgba(255, 255, 255, 0.92);
   font-weight: 650;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  word-break: keep-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .candy-deed-price-badge {
@@ -244,25 +277,99 @@
   flex-shrink: 0;
 }
 
-/* Turn Action Buttons Box (Docked cleanly at bottom of left pane) */
-.candy-deed-actions {
+/* ══════════════════════════════════════════════
+   UNIFIED FULL-WIDTH FOOTER CONSOLE
+   ══════════════════════════════════════════════ */
+.candy-deed-footer-console {
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px 16px;
   background: #ffffff;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
   box-sizing: border-box;
+  z-index: 10;
 }
 
-.deed-dual-actions {
+.footer-status-zone {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
 }
 
-.candy-owner-actions {
+.footer-player-info {
   display: flex;
   flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.footer-player-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer-player-balance {
+  font-size: 10.5px;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.footer-actions-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.footer-owner-zone {
   gap: 6px;
+}
+
+.deed-footer-btn {
+  white-space: nowrap !important;
+  font-size: clamp(12px, 1.2vw, 13.5px) !important;
+  padding: clamp(7px, 1vh, 9px) clamp(14px, 1.5vw, 18px) !important;
+  min-height: 38px !important;
+  font-weight: 750 !important;
+}
+
+.deed-footer-btn-primary {
+  font-weight: 850 !important;
+}
+
+.owner-rent-due-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.owner-rent-due-pill .rent-due-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #e11d48;
+}
+
+.owner-rent-due-pill .rent-due-val {
+  font-size: 13px;
+  font-weight: 900;
+  color: #e11d48;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ══════════════════════════════════════════════
@@ -550,15 +657,15 @@
    5. RESPONSIVE BREAKPOINTS
    ══════════════════════════════════════════════ */
 
-/* Mobile portrait ≤ 600px */
-@media (max-width: 600px) {
+/* Mobile portrait ≤ 640px */
+@media (max-width: 640px) {
   .candy-deed-overlay {
     padding: 8px;
     align-items: center;
   }
 
   .candy-deed-modal {
-    width: min(400px, calc(100vw - 16px));
+    width: min(440px, calc(100vw - 16px));
     max-height: 94dvh;
     border-radius: 12px;
   }
@@ -579,14 +686,11 @@
 
   .candy-deed-left-pane {
     width: 100%;
+    flex: 0 0 200px;
+    height: 200px;
+    min-height: 200px;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
-  }
-
-  .candy-deed-scenic-header {
-    height: 125px;
-    min-height: 125px;
-    flex: none;
   }
 
   .candy-deed-header-bottom {
@@ -606,13 +710,39 @@
     gap: 6px;
     overflow-y: visible;
   }
+
+  .candy-deed-footer-console {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .footer-status-zone {
+    justify-content: space-between;
+  }
+
+  .footer-actions-zone {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .footer-owner-zone {
+    flex-wrap: wrap;
+  }
+
+  .deed-footer-btn {
+    flex: 1;
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+  }
 }
 
-/* Mobile landscape / low vertical height (≤ 520px height) */
-@media (max-height: 520px) {
+/* Mobile landscape / low vertical height (≤ 540px height) */
+@media (max-height: 540px) {
   .candy-deed-modal {
-    width: min(660px, calc(100vw - 20px));
-    max-height: min(95dvh, 360px);
+    width: min(680px, calc(100vw - 20px));
+    max-height: min(96dvh, 420px);
     border-radius: 10px;
   }
 
@@ -635,11 +765,9 @@
   }
 
   .candy-deed-left-pane {
-    width: 250px;
-  }
-
-  .candy-deed-scenic-header {
-    min-height: 140px;
+    width: 240px;
+    flex: 0 0 240px;
+    align-self: stretch;
   }
 
   .candy-deed-header-bottom {
@@ -662,6 +790,15 @@
   .candy-schedule-row {
     padding: 3px 6px;
     font-size: 11px;
+  }
+
+  .candy-deed-footer-console {
+    padding: 6px 12px;
+  }
+
+  .deed-footer-btn {
+    padding: 5px 10px !important;
+    min-height: 30px !important;
   }
 }
 
@@ -699,12 +836,14 @@
     height: 32px;
   }
 
-  .candy-deed-left-pane {
-    width: 315px;
+  .candy-deed-columns {
+    min-height: 400px;
   }
 
-  .candy-deed-scenic-header {
-    min-height: 220px;
+  .candy-deed-left-pane {
+    width: 315px;
+    flex: 0 0 315px;
+    align-self: stretch;
   }
 
   .candy-deed-header-bottom {

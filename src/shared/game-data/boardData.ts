@@ -60,12 +60,12 @@ export const COLOR_HEX_MAP: Record<string, string> = {
 };
 
 export const COLOR_GROUP_NAMES: Record<string, string> = {
-  teal: 'Sacred Heritage',
-  blue: 'Pilgrimage Corridor',
+  teal: 'Heritage & Craft Hubs',
+  blue: 'Northern Industrial Belt',
   purple: 'Saurashtra Hubs',
-  orange: 'North & Central Commerce',
+  orange: 'Central Commercial Belt',
   red: 'Royal & Metropolis',
-  yellow: 'Mega Landmarks & Crafts',
+  yellow: 'Landmarks & Cultural Hubs',
   green: 'Modern Mega Commercial'
 };
 
@@ -230,17 +230,14 @@ export function getHouseCostByStep(step: number): number {
   return tile?.price ? Math.round(tile.price * 0.5) : 500;
 }
 
-// ── 32 CANONICAL BOARD TILES ───────────────────────────────────────────────────
-// Symmetric 4-line layout:
-// Bottom edge: Teal Group (3) + TAX (Center) + Blue Group (3)
-// Right edge: Purple Group (3) + CENTRAL BANK (Center) + Orange Group (3)
-// Top edge: Red Group (3) + GOLD RESERVE (Center) + Yellow Group (3)
-// Left edge: Green Group (3) + CHANCE (Center) + 3 Seaports
+// ── 32 CANONICAL BOARD TILES (Continuous Color Groups — Seamless Board Feel) ──
+// Properties are arranged in contiguous color blocks of 3 properties each, matching
+// classic board game neighborhood cohesion and calibrated economic tiers.
 export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
   // ── Bottom row — Steps 0–8 (Left → Right) ──────────────────────────────────
   {
     step: 0,
-    name: "START / GO",
+    name: "START",
     gujaratiName: "પ્રારંભ",
     type: "START",
     price: null,
@@ -249,14 +246,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: true,
     edge: "corner",
-    imageUrl: "/assets/images/cities/tile_0.png",
+    imageUrl: "/assets/images/corners/corner_start.png",
     iconFrame: 14,
-    description: "Start point of the Gujarat trade expedition. Collect ₹1,000 every time you pass."
+    description: "Start point of the Gujarat trade expedition. Collect ₹1,000 every time you pass or land here."
   },
   {
     step: 1,
-    name: "SOMNATH",
-    gujaratiName: "સોમનાથ જ્યોતિર્લિંગ",
+    name: "MORBI",
+    gujaratiName: "મોરબી",
     type: "PROPERTY",
     price: 600,
     color: "teal",
@@ -264,14 +261,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 2,
     isCorner: false,
     edge: "bottom",
-    imageUrl: "/assets/images/cities/tile_1.png",
+    imageUrl: "/assets/images/cities/morbi.png",
     iconFrame: 5,
-    description: "The first among the twelve holy Jyotirlinga shrines of Lord Shiva on the Arabian Sea coast."
+    description: "World capital of ceramic tiles and clock manufacturing on the banks of Machhu River."
   },
   {
     step: 2,
-    name: "PALITANA",
-    gujaratiName: "પાલીતાણા તીર્થ",
+    name: "PATAN",
+    gujaratiName: "પાટણ",
     type: "PROPERTY",
     price: 600,
     color: "teal",
@@ -279,14 +276,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 3,
     isCorner: false,
     edge: "bottom",
-    imageUrl: "/assets/images/cities/tile_2.png",
+    imageUrl: "/assets/images/cities/patan.png",
     iconFrame: 9,
-    description: "World-renowned sacred mountain sanctuary with over 800 marble temples atop Shatrunjaya hills."
+    description: "Ancient capital of Gujarat, famed for GI-tagged double-ikat Patola weaving and Solanki heritage."
   },
   {
     step: 3,
-    name: "AMBAJI",
-    gujaratiName: "અંબાજી શક્તિપીઠ",
+    name: "BHARUCH",
+    gujaratiName: "ભરૂચ",
     type: "PROPERTY",
     price: 600,
     color: "teal",
@@ -294,14 +291,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 4,
     isCorner: false,
     edge: "bottom",
-    imageUrl: "/assets/images/cities/tile_3.png",
+    imageUrl: "/assets/images/cities/bharuch.png",
     iconFrame: 9,
-    description: "Major Shakti Peeth pilgrimage sanctuary nestled in the scenic Aravalli mountain ranges."
+    description: "Historic seaport town on the sacred Narmada River, thriving chemical and industrial corridor."
   },
   {
     step: 4,
     name: "TAX",
-    gujaratiName: "વાણિજ્યિક કર",
+    gujaratiName: "વાણિજ્ય કર",
     type: "TAX",
     price: null,
     color: null,
@@ -309,14 +306,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 5,
     isCorner: false,
     edge: "bottom",
-    imageUrl: "/assets/images/cities/tile_5.png",
+    imageUrl: "/assets/images/cities/tile_tax.png",
     iconFrame: 13,
     description: "Commercial trade duties and statutory revenue levied by the Government of Gujarat."
   },
   {
     step: 5,
-    name: "DWARKA",
-    gujaratiName: "દ્વારકાધીશ",
+    name: "MEHSANA",
+    gujaratiName: "મહેસાણા",
     type: "PROPERTY",
     price: 800,
     color: "blue",
@@ -324,14 +321,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 6,
     isCorner: false,
     edge: "bottom",
-    imageUrl: "/assets/images/cities/tile_4.png",
+    imageUrl: "/assets/images/cities/mehsana.png",
     iconFrame: 9,
-    description: "Sacred kingdom of Lord Krishna and premier spiritual pilgrimage destination of western India."
+    description: "North Gujarat commerce hub, home to Asia's largest Dudhsagar Cooperative Dairy and solar projects."
   },
   {
     step: 6,
-    name: "DAKOR",
-    gujaratiName: "ડાકોર રણછોડરાય",
+    name: "NADIAD",
+    gujaratiName: "નડિયાદ",
     type: "PROPERTY",
     price: 800,
     color: "blue",
@@ -339,14 +336,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 7,
     isCorner: false,
     edge: "bottom",
-    imageUrl: "/assets/images/cities/tile_7.png",
+    imageUrl: "/assets/images/cities/nadiad.png",
     iconFrame: 9,
-    description: "Sacred pilgrimage shrine dedicated to Lord Ranchhodraiji on the banks of Gomti Lake."
+    description: "Charotar commercial center, cultural town, and agricultural trading hub of central Gujarat."
   },
   {
     step: 7,
-    name: "RANI KI VAV",
-    gujaratiName: "રાણકી વાવ પાટણ",
+    name: "VAPI",
+    gujaratiName: "વાપી",
     type: "PROPERTY",
     price: 800,
     color: "blue",
@@ -354,14 +351,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 8,
     isCorner: false,
     edge: "bottom",
-    imageUrl: "/assets/images/cities/tile_9.png",
+    imageUrl: "/assets/images/cities/vapi.png",
     iconFrame: 4,
-    description: "UNESCO World Heritage subterranean stepwell displaying sublime Solanki dynasty architecture."
+    description: "Southern Gujarat manufacturing powerhouse, one of India's largest chemical and paper industrial hubs."
   },
   {
     step: 8,
     name: "JAIL",
-    gujaratiName: "કારાગૃહ",
+    gujaratiName: "જેલ",
     type: "JAIL",
     price: null,
     color: null,
@@ -369,16 +366,16 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: true,
     edge: "corner",
-    imageUrl: "/assets/images/cities/tile_8.png",
+    imageUrl: "/assets/images/corners/corner_jail.png",
     iconFrame: 15,
-    description: "Just Visiting — or In Jail. Roll doubles to escape, pay ₹500 fine, or use a Get Out of Jail Free card."
+    description: "Central Jail — Just Visiting if landing normally, or In Jail if arrested. Roll doubles, pay ₹500 bail, or use a Get Out of Jail Free card."
   },
 
   // ── Right side — Steps 9–15 (Bottom → Top) ─────────────────────────────────
   {
     step: 9,
     name: "JUNAGADH",
-    gujaratiName: "જૂનાગઢ ગિરનાર",
+    gujaratiName: "જૂનાગઢ",
     type: "PROPERTY",
     price: 1000,
     color: "purple",
@@ -386,14 +383,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: false,
     edge: "right",
-    imageUrl: "/assets/images/cities/tile_10.png",
+    imageUrl: "/assets/images/cities/junagadh.png",
     iconFrame: 6,
     description: "Historic citadel beneath Mount Girnar and historic gateway to the Asiatic Lion sanctuary."
   },
   {
     step: 10,
     name: "RAJKOT",
-    gujaratiName: "રાજકોટ રંગીલું",
+    gujaratiName: "રાજકોટ",
     type: "PROPERTY",
     price: 1000,
     color: "purple",
@@ -401,14 +398,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: false,
     edge: "right",
-    imageUrl: "/assets/images/cities/tile_11.png",
+    imageUrl: "/assets/images/cities/rajkot.png",
     iconFrame: 11,
     description: "Vibrant capital of Saurashtra, thriving hub of engineering, auto components, and jewelry."
   },
   {
     step: 11,
     name: "JAMNAGAR",
-    gujaratiName: "જામનગર બ્રાસ સિટી",
+    gujaratiName: "જામનગર",
     type: "PROPERTY",
     price: 1000,
     color: "purple",
@@ -416,14 +413,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: false,
     edge: "right",
-    imageUrl: "/assets/images/cities/tile_12.png",
+    imageUrl: "/assets/images/cities/jamnagar.png",
     iconFrame: 10,
     description: "Brass City of India and world's largest oil refining and petrochemical manufacturing complex."
   },
   {
     step: 12,
     name: "CENTRAL BANK",
-    gujaratiName: "ગુજરાત સેન્ટ્રલ બેંક",
+    gujaratiName: "સેન્ટ્રલ બેંક",
     type: "BANK",
     price: null,
     color: null,
@@ -431,14 +428,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: false,
     edge: "right",
-    imageUrl: "/assets/images/cities/tile_14.png",
+    imageUrl: "/assets/images/cities/tile_bank.png",
     iconFrame: 12,
-    description: "Branch banking authority providing enterprise loans and liquidity reserves."
+    description: "Central Bank of Gujarat — Universal liquidity reserve paying ₹250 interest dividend to all merchants."
   },
   {
     step: 13,
-    name: "MODHERA SUN",
-    gujaratiName: "મોઢેરા સૂર્ય મંદિર",
+    name: "ANKLESHWAR",
+    gujaratiName: "અંકલેશ્વર",
     type: "PROPERTY",
     price: 1200,
     color: "orange",
@@ -446,14 +443,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: false,
     edge: "right",
-    imageUrl: "/assets/images/cities/tile_13.png",
+    imageUrl: "/assets/images/cities/ankleshwar.png",
     iconFrame: 4,
-    description: "Exquisite 11th-century solar temple and stepped Sabha Mandap tank architecture."
+    description: "Asia's leading chemical industrial estate and vital commercial manufacturing center."
   },
   {
     step: 14,
     name: "HIMATNAGAR",
-    gujaratiName: "હિંમતનગર સાબરકાંઠા",
+    gujaratiName: "હિંમતનગર",
     type: "PROPERTY",
     price: 1200,
     color: "orange",
@@ -461,14 +458,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: false,
     edge: "right",
-    imageUrl: "/assets/images/cities/tile_15.png",
+    imageUrl: "/assets/images/cities/himatnagar.png",
     iconFrame: 4,
     description: "Vibrant capital of Sabarkantha, renowned for Sabar Dairy, ceramics, and river trade."
   },
   {
     step: 15,
     name: "ANAND",
-    gujaratiName: "આણંદ અમૂલ ડેરી",
+    gujaratiName: "આણંદ",
     type: "PROPERTY",
     price: 1200,
     color: "orange",
@@ -476,16 +473,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: false,
     edge: "right",
-    imageUrl: "/assets/images/cities/tile_17.png",
+    imageUrl: "/assets/images/cities/anand.png",
     iconFrame: 15,
     description: "Milk Capital of India, birthplace of AMUL and epicenter of India's White Revolution."
   },
-
-  // ── Top row — Steps 16–23 (Right → Left) ───────────────────────────────────
   {
     step: 16,
-    name: "FREE PARKING",
-    gujaratiName: "મફત વિશ્રામ",
+    name: "REST OASIS",
+    gujaratiName: "રેસ્ટ ઓએસિસ",
     type: "FREE_PARKING",
     price: null,
     color: null,
@@ -493,14 +488,16 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 9,
     isCorner: true,
     edge: "corner",
-    imageUrl: "/assets/images/cities/tile_16.png",
+    imageUrl: "/assets/images/corners/corner_oasis.png",
     iconFrame: 12,
-    description: "Free Parking — a safe rest spot. No rent, no fines, nothing happens here."
+    description: "Rest Oasis — safe resting haven. No rent, no fines, relax peacefully."
   },
+
+  // ── Top row — Steps 17–23 (Right → Left) ───────────────────────────────────
   {
     step: 17,
     name: "GANDHINAGAR",
-    gujaratiName: "ગાંધીનગર સચિવાલય",
+    gujaratiName: "ગાંધીનગર",
     type: "PROPERTY",
     price: 1500,
     color: "red",
@@ -508,14 +505,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 8,
     isCorner: false,
     edge: "top",
-    imageUrl: "/assets/images/cities/tile_19.png",
+    imageUrl: "/assets/images/cities/gandhinagar.png",
     iconFrame: 3,
     description: "Capital of Gujarat, famed for green architecture, governance, and tech corridors."
   },
   {
     step: 18,
     name: "VADODARA",
-    gujaratiName: "વડોદરા સંસ્કારી નગરી",
+    gujaratiName: "વડોદરા",
     type: "PROPERTY",
     price: 1500,
     color: "red",
@@ -523,14 +520,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 7,
     isCorner: false,
     edge: "top",
-    imageUrl: "/assets/images/cities/tile_20.png",
+    imageUrl: "/assets/images/cities/vadodara.png",
     iconFrame: 3,
     description: "Cultural capital of Gujarat, renowned for heritage, arts, academia, and pharmaceutical giants."
   },
   {
     step: 19,
     name: "LAXMI VILAS",
-    gujaratiName: "લક્ષ્મી વિલાસ મહેલ",
+    gujaratiName: "લક્ષ્મી વિલાસ",
     type: "PROPERTY",
     price: 1500,
     color: "red",
@@ -538,14 +535,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 6,
     isCorner: false,
     edge: "top",
-    imageUrl: "/assets/images/cities/tile_21.png",
+    imageUrl: "/assets/images/cities/laxmi_vilas.png",
     iconFrame: 3,
     description: "Grand Indo-Saracenic royal palace of the Gaekwads, four times the size of Buckingham Palace."
   },
   {
     step: 20,
     name: "GOLD RESERVE",
-    gujaratiName: "રાજ્ય સુવર્ણ ભંડાર",
+    gujaratiName: "સુવર્ણ ભંડાર",
     type: "SPECIAL",
     price: null,
     color: null,
@@ -553,14 +550,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 5,
     isCorner: false,
     edge: "top",
-    imageUrl: "/assets/images/cities/tile_18.png",
+    imageUrl: "/assets/images/cities/tile_gold.png",
     iconFrame: 15,
     description: "Sovereign treasury holding pure gold bullion reserves for commerce liquidity."
   },
   {
     step: 21,
     name: "AHMEDABAD",
-    gujaratiName: "અમદાવાદ હેરિટેજ",
+    gujaratiName: "અમદાવાદ",
     type: "PROPERTY",
     price: 1800,
     color: "yellow",
@@ -568,7 +565,7 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 4,
     isCorner: false,
     edge: "top",
-    imageUrl: "/assets/images/cities/tile_23.png",
+    imageUrl: "/assets/images/cities/ahmedabad.png",
     iconFrame: 1,
     description: "India's first UNESCO World Heritage City, world center of textiles and vibrant commerce."
   },
@@ -583,14 +580,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 3,
     isCorner: false,
     edge: "top",
-    imageUrl: "/assets/images/cities/tile_25.png",
+    imageUrl: "/assets/images/cities/statue_of_unity.png",
     iconFrame: 0,
     description: "The world's tallest monument standing 182 meters tall on the Narmada river."
   },
   {
     step: 23,
-    name: "BHUJ KUTCH",
-    gujaratiName: "ભુજ કચ્છ ક્રાફ્ટ",
+    name: "BHUJ",
+    gujaratiName: "ભુજ",
     type: "PROPERTY",
     price: 1800,
     color: "yellow",
@@ -598,16 +595,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 2,
     isCorner: false,
     edge: "top",
-    imageUrl: "/assets/images/cities/tile_26.png",
+    imageUrl: "/assets/images/cities/bhuj.png",
     iconFrame: 11,
     description: "Heart of Kutch, famed for the White Desert, ancient palaces, handloom embroidery, and crafts."
   },
-
-  // ── Left side — Steps 24–31 (Top → Bottom) ─────────────────────────────────
   {
     step: 24,
     name: "GO TO JAIL",
-    gujaratiName: "કારાગૃહ જાઓ",
+    gujaratiName: "જેલ જાઓ",
     type: "GO_TO_JAIL",
     price: null,
     color: null,
@@ -615,14 +610,16 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: true,
     edge: "corner",
-    imageUrl: "/assets/images/cities/tile_24.png",
+    imageUrl: "/assets/images/corners/corner_gotojail.png",
     iconFrame: 13,
-    description: "Go directly to Jail. Do not pass START, do not collect ₹1,000."
+    description: "Police Detainment — Go directly to Central Jail! Do not pass START, do not collect ₹1,000."
   },
+
+  // ── Left side — Steps 25–31 (Top → Bottom) ─────────────────────────────────
   {
     step: 25,
-    name: "AKSHARDHAM",
-    gujaratiName: "અક્ષરધામ મંદિર",
+    name: "DHOLERA",
+    gujaratiName: "ધોલેરા",
     type: "PROPERTY",
     price: 2200,
     color: "green",
@@ -630,14 +627,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: false,
     edge: "left",
-    imageUrl: "/assets/images/cities/tile_27.png",
+    imageUrl: "/assets/images/cities/dholera.png",
     iconFrame: 4,
-    description: "Magnificent sandstone temple monument honoring ancient Indian spiritual architecture."
+    description: "India's premier Greenfield smart city, international airport, and global semiconductor manufacturing hub."
   },
   {
     step: 26,
     name: "GIFT CITY",
-    gujaratiName: "ગિફ્ટ સિટી ગાંધીનગર",
+    gujaratiName: "ગિફ્ટ સિટી",
     type: "PROPERTY",
     price: 2200,
     color: "green",
@@ -645,14 +642,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: false,
     edge: "left",
-    imageUrl: "/assets/images/cities/tile_28.png",
+    imageUrl: "/assets/images/cities/gift_city.png",
     iconFrame: 7,
     description: "India's premier operational smart city and International Financial Services Centre (IFSC)."
   },
   {
     step: 27,
-    name: "SURAT DIAMOND",
-    gujaratiName: "સુરત ડાયમંડ બુર્સ",
+    name: "SURAT",
+    gujaratiName: "સુરત",
     type: "PROPERTY",
     price: 2200,
     color: "green",
@@ -660,14 +657,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: false,
     edge: "left",
-    imageUrl: "/assets/images/cities/tile_31.png",
+    imageUrl: "/assets/images/cities/surat.png",
     iconFrame: 2,
-    description: "World's largest office building and global epicenter for diamond cutting and trading."
+    description: "Global epicenter for diamond cutting, silk commerce, and India's fastest-growing business hub."
   },
   {
     step: 28,
     name: "CHANCE",
-    gujaratiName: "ભાગ્ય અને નસીબ",
+    gujaratiName: "નસીબ / ચાન્સ",
     type: "CHANCE",
     price: null,
     color: null,
@@ -675,14 +672,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: false,
     edge: "left",
-    imageUrl: "/assets/images/cities/tile_22.png",
+    imageUrl: "/assets/images/cities/tile_chance.png",
     iconFrame: 15,
     description: "Draw an auspicious fortune or contingency card altering your business fortunes."
   },
   {
     step: 29,
-    name: "BHAVNAGAR PORT",
-    gujaratiName: "ભાવનગર બંદર",
+    name: "BHAVNAGAR",
+    gujaratiName: "ભાવનગર",
     type: "PORT",
     price: 1000,
     color: null,
@@ -690,14 +687,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: false,
     edge: "left",
-    imageUrl: "/assets/images/cities/tile_6.png",
+    imageUrl: "/assets/images/cities/bhavnagar.png",
     iconFrame: 8,
     description: "Historic maritime port, tidal lock-gate harbor, and traditional trading gateway of Saurashtra."
   },
   {
     step: 30,
-    name: "KANDLA PORT",
-    gujaratiName: "કંડલા મહાબંદર",
+    name: "KANDLA",
+    gujaratiName: "કંડલા",
     type: "PORT",
     price: 1000,
     color: null,
@@ -705,14 +702,14 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: false,
     edge: "left",
-    imageUrl: "/assets/images/cities/tile_29.png",
+    imageUrl: "/assets/images/cities/kandla.png",
     iconFrame: 8,
     description: "India's highest cargo volume port, crucial commercial maritime gateway for western India."
   },
   {
     step: 31,
-    name: "PORBANDAR PORT",
-    gujaratiName: "પોરબંદર બંદર",
+    name: "PORBANDAR",
+    gujaratiName: "પોરબંદર",
     type: "PORT",
     price: 1000,
     color: null,
@@ -720,7 +717,7 @@ export const DEFAULT_BOARD_TILES: BoardTileStep[] = [
     gridCol: 1,
     isCorner: false,
     edge: "left",
-    imageUrl: "/assets/images/cities/tile_30.png",
+    imageUrl: "/assets/images/cities/porbandar.png",
     iconFrame: 8,
     description: "Historic seaport of Saurashtra, birthplace of Mahatma Gandhi and active maritime harbor."
   }

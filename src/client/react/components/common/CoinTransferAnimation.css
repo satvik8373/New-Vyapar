@@ -1,0 +1,126 @@
+/* ── COIN TRANSFER ANIMATION LAYER ── */
+.coin-transfer-overlay-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3100;
+  overflow: hidden;
+}
+
+/* Floating Amount Badges (+₹X and -₹X) */
+.coin-floating-pill {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 2px solid;
+  pointer-events: none;
+  animation: floatingPillPulse 1.6s ease-out forwards;
+}
+
+.coin-floating-pill.deduction-pill {
+  background: rgba(225, 29, 72, 0.92);
+  color: #ffffff;
+}
+
+.coin-floating-pill.credit-pill {
+  background: rgba(5, 150, 105, 0.92);
+  color: #ffffff;
+}
+
+.coin-floating-pill .pill-sign {
+  font-size: 17px;
+}
+
+@keyframes floatingPillPulse {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -20%) scale(0.7);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -65%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -85%) scale(0.9);
+  }
+}
+
+/* Flying Gold Coins along ballistic curve */
+.flying-gold-coin {
+  position: absolute;
+  left: var(--start-x);
+  top: var(--start-y);
+  pointer-events: none;
+  opacity: 0;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+  animation-name: flyCoinAlongTrajectory;
+  animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes flyCoinAlongTrajectory {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.6) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(calc(var(--delta-x) * 0.1), calc(var(--arc-y) * 0.4)) scale(1.15) rotate(45deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(var(--arc-x), var(--arc-y)) scale(1) rotate(180deg);
+  }
+  90% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(calc(var(--delta-x) * 0.95), calc(var(--delta-y) * 0.95)) scale(0.9) rotate(var(--spin-deg));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--delta-x), var(--delta-y)) scale(0.6) rotate(var(--spin-deg));
+  }
+}
+
+/* Impact arrival shimmer ring */
+.coin-arrival-impact {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  pointer-events: none;
+  animation: arrivalFlash 0.7s cubic-bezier(0.1, 0.9, 0.2, 1) 0.85s forwards;
+}
+
+@keyframes arrivalFlash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  40% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.2);
+  }
+}

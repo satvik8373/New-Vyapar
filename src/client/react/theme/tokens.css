@@ -1,0 +1,89 @@
+/**
+ * ============================================================================
+ * NAVO VYAPAR DESIGN SYSTEM TOKENS
+ * Centralized CSS Variables for Reusable, Theme-Based Component Architecture
+ * ============================================================================
+ */
+
+:root {
+  /* --- Typography Stacks --- */
+  --vyapar-font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --vyapar-font-gujarati: 'Anek Gujarati', 'Noto Sans Gujarati', sans-serif;
+  --vyapar-font-brand: 'Cinzel', 'Outfit', 'Plus Jakarta Sans', serif;
+
+  /* --- Base Surfaces --- */
+  --vyapar-surface-canvas: #ffffff;
+  --vyapar-surface-card: #ffffff;
+  --vyapar-surface-subtle: #f8fafc;
+  --vyapar-surface-muted: #f1f5f9;
+  --vyapar-surface-elevated: #fafbfc;
+  --vyapar-surface-contrast: #0f172a;
+
+  /* --- Text & Contrast --- */
+  --vyapar-text-primary: #0f172a;
+  --vyapar-text-secondary: #475569;
+  --vyapar-text-muted: #64748b;
+  --vyapar-text-subtle: #94a3b8;
+  --vyapar-text-inverse: #ffffff;
+
+  /* --- Borders & Outlines --- */
+  --vyapar-border-subtle: rgba(226, 232, 240, 0.85);
+  --vyapar-border-card: rgba(226, 232, 240, 0.95);
+  --vyapar-border-strong: #0f172a;
+  --vyapar-border-accent-gold: #fde68a;
+
+  /* --- Elevation Shadows (Solid, Minimalist, High Contrast) --- */
+  --vyapar-shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --vyapar-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --vyapar-shadow-stage: 0 16px 36px -6px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --vyapar-shadow-btn: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+  /* --- Border Radii --- */
+  --vyapar-radius-xs: 4px;
+  --vyapar-radius-sm: 6px;
+  --vyapar-radius-md: 10px;
+  --vyapar-radius-lg: 14px;
+  --vyapar-radius-xl: 18px;
+  --vyapar-radius-pill: 9999px;
+
+  /* --- Event & Category Palette --- */
+  --vyapar-event-rent: #f59e0b;
+  --vyapar-event-rent-bg: #fef3c7;
+  --vyapar-event-rent-border: #fde68a;
+  --vyapar-event-rent-text: #92400e;
+
+  --vyapar-event-buy: #10b981;
+  --vyapar-event-buy-bg: #dcfce7;
+  --vyapar-event-buy-border: #bbf7d0;
+  --vyapar-event-buy-text: #065f46;
+
+  --vyapar-event-salary: #3b82f6;
+  --vyapar-event-salary-bg: #dbeafe;
+  --vyapar-event-salary-border: #bfdbfe;
+  --vyapar-event-salary-text: #1e40af;
+
+  --vyapar-event-tax: #ef4444;
+  --vyapar-event-tax-bg: #fee2e2;
+  --vyapar-event-tax-border: #fecaca;
+  --vyapar-event-tax-text: #991b1b;
+
+  --vyapar-event-chance: #8b5cf6;
+  --vyapar-event-chance-bg: #ede9fe;
+  --vyapar-event-chance-border: #ddd6fe;
+  --vyapar-event-chance-text: #5b21b6;
+
+  --vyapar-event-jail: #dc2626;
+  --vyapar-event-jail-bg: #fee2e2;
+  --vyapar-event-jail-border: #fca5a5;
+  --vyapar-event-jail-text: #7f1d1d;
+
+  --vyapar-event-loan: #0284c7;
+  --vyapar-event-loan-bg: #e0f2fe;
+  --vyapar-event-loan-border: #bae6fd;
+  --vyapar-event-loan-text: #075985;
+
+  --vyapar-event-info: #0f172a;
+  --vyapar-event-info-bg: #f1f5f9;
+  --vyapar-event-info-border: #e2e8f0;
+  --vyapar-event-info-text: #0f172a;
+}

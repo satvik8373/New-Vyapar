@@ -11,3 +11,5 @@ export * from './CandyCard';
 export * from './CandyPill';
 export * from './CandyStatBox';
 export * from './PremiumCardShowcase';
+export * from './CurrencyCoin';
+export * from './CoinTransferAnimation';

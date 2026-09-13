@@ -47,11 +47,17 @@
 
 .city-deed-stack-container.is-big .deed-card-art-stage {
   height: 120px;
+  padding: 5px;
+  box-sizing: border-box;
 }
 
 .city-deed-stack-container.is-big .deed-art-sprite {
-  max-width: 110px;
-  max-height: 110px;
+  width: auto;
+  height: auto;
+  max-width: 94%;
+  max-height: 94%;
+  object-fit: contain;
+  object-position: center center;
 }
 
 .city-deed-stack-container.is-big .deed-label {
@@ -175,7 +181,11 @@
   margin: 0;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  line-height: 1.1;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .deed-city-gujarati {
@@ -183,27 +193,35 @@
   font-weight: 750;
   color: rgba(255, 255, 255, 0.92);
   margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-/* 2. High-Resolution Art Stage */
+/* 2. High-Resolution Art Stage (Seamless full fit) */
 .deed-card-art-stage {
   width: 100%;
-  height: 86px;
-  background: radial-gradient(circle at 50% 50%, #ffffff 50%, #f8fafc 100%);
+  height: 96px;
+  background: var(--deed-color, #0f172a);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 4px;
   box-sizing: border-box;
-  border-bottom: 1px solid #f1f5f9;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .deed-art-sprite {
-  max-width: 80px;
-  max-height: 80px;
+  width: auto;
+  height: auto;
+  max-width: 94%;
+  max-height: 94%;
   object-fit: contain;
-  filter: drop-shadow(0 6px 12px rgba(15, 23, 42, 0.16));
+  object-position: center center;
   pointer-events: none;
+  display: block;
 }
 
 /* 3. Card Body: Rent Schedule Table */
@@ -481,13 +499,18 @@
   }
 
   .city-deed-stack-container.is-big .deed-card-art-stage {
-    height: 55px;
-    padding: 2px;
+    height: 60px;
+    padding: 3px;
+    box-sizing: border-box;
   }
 
   .city-deed-stack-container.is-big .deed-art-sprite {
-    max-width: 50px;
-    max-height: 50px;
+    width: auto;
+    height: auto;
+    max-width: 94%;
+    max-height: 94%;
+    object-fit: contain;
+    object-position: center center;
   }
 
   .city-deed-stack-container.is-big .deed-card-body {
